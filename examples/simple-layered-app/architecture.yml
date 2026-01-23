@@ -1,0 +1,35 @@
+version: 1
+system:
+  id: simple-layered-app
+  name: Simple Layered Application
+
+containers:
+  main-app:
+    name: Main Application
+    description: A simple layered application demonstrating clean architecture principles
+    code:
+      roots:
+        - src
+      layers:
+        ui:
+          name: UI Layer
+          description: API controllers and presentation logic
+          patterns:
+            - src/ui/**
+        application:
+          name: Application Layer
+          description: Use cases and application services
+          patterns:
+            - src/application/**
+        domain:
+          name: Domain Layer
+          description: Core business logic and domain models
+          patterns:
+            - src/domain/**
+        infra:
+          name: Infrastructure Layer
+          description: Data persistence, external services, and technical implementations
+          patterns:
+            - src/infra/**
+
+contexts: {}

@@ -1,0 +1,31 @@
+site_name: Pacta
+site_description: Architecture Testing & Architecture-as-Code
+site_url: https://akhundmurad.github.io/pacta/
+
+repo_name: akhundMurad/pacta
+repo_url: https://github.com/akhundMurad/pacta
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+
+nav:
+  - Home: index.md
+  - CLI Reference: cli.md
+  - Architecture Model: architecture.md
+  - Rules DSL: rules.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.snippets
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true

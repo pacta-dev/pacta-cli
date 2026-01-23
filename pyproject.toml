@@ -1,0 +1,60 @@
+[project]
+name = "pacta"
+version = "0.0.1"
+description = "A Python tool for enforcing and visualizing software architecture."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "AGPL-3.0-only" }
+keywords = ["architecture", "testing", "static-analysis", "clean-architecture"]
+
+authors = [
+  { name = "Murad Akhundov", email = "akhundov1murad@gmail.com" },
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU Affero General Public License v3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+dependencies = ["pyyaml>=6.0,<7.0"]
+
+[project.urls]
+Homepage = "https://github.com/akhundMurad/pacta"
+Documentation = "https://akhundmurad.github.io/pacta/"
+Repository = "https://github.com/akhundMurad/pacta"
+Issues = "https://github.com/akhundMurad/pacta/issues"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "mypy>=1.10",
+  "ty>=0.0.13",
+  "mkdocs-material>=9.7.1",
+  "ruff>=0.14.14",
+]
+
+[project.scripts]
+pacta = "pacta.cli:main"
+
+[project.entry-points."pacta.analyzers"]
+python = "pacta.analyzers.python:PythonAnalyzer"
+
+[tool.ruff]
+src = ["pacta", "tests"]
+
+lint.select = ["E", "F", "I", "B", "UP"]
+
+line-length = 119
+
+[tool.ty.rules]
+invalid-assignment = "ignore"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

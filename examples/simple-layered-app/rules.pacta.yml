@@ -1,0 +1,102 @@
+# Architecture Rules for Simple Layered Application
+# This file defines architectural constraints using Pacta's rule DSL
+
+# Rule 1: Domain layer must not depend on infrastructure layer
+# This enforces the Dependency Inversion Principle
+rule:
+  id: no_domain_to_infra
+  name: Domain must not depend on Infrastructure
+  description: |
+    The domain layer contains pure business logic and should not
+    depend on technical implementation details in the infrastructure layer.
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == infra
+  action: forbid
+  message: Domain layer must not depend on Infrastructure layer (Dependency Inversion Principle)
+  suggestion: Use dependency injection and define interfaces in the domain layer
+
+# Rule 2: Domain layer must not depend on application layer
+# Domain should be independent of use cases
+rule:
+  id: no_domain_to_application
+  name: Domain must not depend on Application
+  description: Domain layer should contain pure business logic without knowledge of use cases
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == application
+  action: forbid
+  message: Domain layer must not depend on Application layer
+  suggestion: Move shared logic to the domain layer
+
+# Rule 3: Domain layer must not depend on UI layer
+# Domain should have no knowledge of presentation concerns
+rule:
+  id: no_domain_to_ui
+  name: Domain must not depend on UI
+  description: Domain layer should be completely independent of presentation logic
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == ui
+  action: forbid
+  message: Domain layer must not depend on UI layer
+  suggestion: Keep domain models free from presentation concerns
+
+# Rule 4: UI layer should not directly depend on infrastructure
+# UI should access infrastructure through application services
+rule:
+  id: no_ui_to_infra
+  name: UI should not directly access Infrastructure
+  description: |
+    UI layer should communicate with infrastructure only through
+    the application layer to maintain proper separation of concerns.
+  severity: warning
+  target: dependency
+  when:
+    all:
+      - from.layer == ui
+      - to.layer == infra
+  action: forbid
+  message: UI layer should not directly depend on Infrastructure layer
+  suggestion: Access infrastructure through application services instead
+
+# Rule 5: Infrastructure can depend on domain (Dependency Inversion)
+# This tracks infra -> domain dependencies for informational purposes
+rule:
+  id: infra_can_use_domain
+  name: Infrastructure implementing domain interfaces
+  description: Infrastructure layer can depend on domain to implement repositories and interfaces
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == infra
+      - to.layer == domain
+  action: forbid
+  message: Infrastructure implementing domain interfaces (tracked for visibility)
+
+# Rule 6: Application layer can depend on both domain and infrastructure
+# Application orchestrates domain logic and infra
+rule:
+  id: application_dependencies_ok
+  name: Application can depend on Domain and Infrastructure
+  description: Application layer orchestrates domain logic and uses infrastructure
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == application
+      - any:
+          - to.layer == domain
+          - to.layer == infra
+  action: allow
+  message: Application layer properly orchestrating domain and infrastructure
