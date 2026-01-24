@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pacta.cli._io import ensure_repo_root
 from pacta.cli.exitcodes import EXIT_OK
+from pacta.snapshot import Snapshot
 from pacta.snapshot.store import FsSnapshotStore
 
 
@@ -117,9 +118,11 @@ def _output_text(
         refs_str = f" ({', '.join(refs_list)})" if refs_list else ""
 
         # Output line
-        print(f"{short_hash}  {timestamp}  {commit}  {branch:<12}  "
-              f"{node_count:>3} nodes  {edge_count:>3} edges  "
-              f"{violation_count:>2} violations{refs_str}")
+        print(
+            f"{short_hash}  {timestamp}  {commit}  {branch:<12}  "
+            f"{node_count:>3} nodes  {edge_count:>3} edges  "
+            f"{violation_count:>2} violations{refs_str}"
+        )
 
     print()
 
@@ -160,7 +163,7 @@ def _output_json(
             "violation_count": len(snapshot.violations),
             "violations_by_severity": violations_by_severity,
         }
-        result["entries"].append(entry)
+        result["entries"].append(entry)  # type: ignore[possibly-missing-attribute]
 
     print(json.dumps(result, indent=2, default=str))
 
@@ -207,10 +210,7 @@ def export(
             "tool_version": meta.tool_version,
             "node_count": len(snapshot.nodes),
             "edge_count": len(snapshot.edges),
-            "violations": [
-                v.to_dict() if hasattr(v, "to_dict") else v
-                for v in snapshot.violations
-            ],
+            "violations": [v.to_dict() if hasattr(v, "to_dict") else v for v in snapshot.violations],
         }
         entries.append(entry)
 

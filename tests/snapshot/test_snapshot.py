@@ -252,8 +252,8 @@ def test_builder_preserves_given_created_at(meta):
 
 def test_store_refs_and_objects(tmp_path: Path):
     """Test the new content-addressed storage with refs."""
-    from pacta.snapshot.store import FsSnapshotStore
     from pacta.snapshot.builder import DefaultSnapshotBuilder
+    from pacta.snapshot.store import FsSnapshotStore
     from pacta.snapshot.types import SnapshotMeta
 
     store = FsSnapshotStore(repo_root=str(tmp_path))

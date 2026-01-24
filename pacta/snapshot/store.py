@@ -24,7 +24,6 @@ from pathlib import Path
 from pacta.snapshot.jsonutil import dumps_deterministic, load_file
 from pacta.snapshot.types import Snapshot, SnapshotRef
 
-
 # Length of hash prefix used for object filenames
 HASH_PREFIX_LENGTH = 8
 

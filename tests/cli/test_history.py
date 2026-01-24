@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from pacta.ir.types import CanonicalId, IRNode, Language, SymbolKind
 from pacta.snapshot.builder import DefaultSnapshotBuilder
 from pacta.snapshot.store import FsSnapshotStore
