@@ -108,6 +108,104 @@ pacta diff [PATH] --from REF --to REF
 pacta diff . --from v1 --to v2
 ```
 
+## history show
+
+View architecture timeline (list of snapshots).
+
+```bash
+pacta history show [PATH] [OPTIONS]
+```
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--last N` | - | Show only last N entries |
+| `--since DATE` | - | Show entries since date (ISO-8601) |
+| `--branch NAME` | - | Filter by branch name |
+| `--format {text,json}` | `text` | Output format |
+
+**Examples:**
+
+```bash
+# Show all snapshots
+pacta history show .
+
+# Show last 10 entries
+pacta history show . --last 10
+
+# Filter by branch and date
+pacta history show . --branch main --since 2025-01-01
+
+# JSON output for scripting
+pacta history show . --format json
+```
+
+**Example output:**
+
+```
+Architecture Timeline (3 entries)
+============================================================
+
+a1b2c3d4  2025-01-22  abc1234  main          42 nodes   87 edges   2 violations (latest)
+e5f6g7h8  2025-01-20  def5678  main          42 nodes   85 edges   4 violations
+12345678  2025-01-18  789abcd  feature/x     40 nodes   82 edges   3 violations
+```
+
+## history export
+
+Export full history data for external processing or SaaS integration.
+
+```bash
+pacta history export [PATH] [OPTIONS]
+```
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--format {json,jsonl}` | `json` | Export format |
+| `-o, --output FILE` | stdout | Output file path |
+
+**Examples:**
+
+```bash
+# Export as JSON
+pacta history export . --format json > history.json
+
+# Export as JSON Lines (one entry per line)
+pacta history export . --format jsonl > history.jsonl
+
+# Export to file
+pacta history export . -o export.json
+```
+
+**JSON output structure:**
+
+```json
+{
+  "version": 1,
+  "exported_at": "2025-01-22T12:00:00",
+  "repo_root": "/path/to/repo",
+  "refs": {
+    "latest": "a1b2c3d4",
+    "baseline": "e5f6g7h8"
+  },
+  "entries": [
+    {
+      "hash": "a1b2c3d4",
+      "timestamp": "2025-01-22T12:00:00+00:00",
+      "commit": "abc1234",
+      "branch": "main",
+      "refs": ["latest"],
+      "node_count": 42,
+      "edge_count": 87,
+      "violations": [...]
+    }
+  ]
+}
+```
+
 ## Exit Codes
 
 | Code | Meaning |

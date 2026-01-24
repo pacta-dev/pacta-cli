@@ -469,6 +469,8 @@ class TestScanCommand:
 
     def test_scan_creates_latest_snapshot(self, clean_layered_app: Path):
         """Scan should automatically save a 'latest' snapshot."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         result = run_pacta(
             "scan",
             str(clean_layered_app),
@@ -480,15 +482,15 @@ class TestScanCommand:
 
         assert result.returncode == 0
 
-        # Check that snapshot was created
-        snapshot_path = clean_layered_app / ".pacta" / "snapshots" / "latest.json"
-        assert snapshot_path.exists(), "Expected latest.json snapshot to be created"
+        # Check that snapshot was created using content-addressed storage
+        store = FsSnapshotStore(repo_root=str(clean_layered_app))
+        assert store.exists("latest"), "Expected 'latest' ref to be created"
 
-        # Verify it's valid JSON
-        snapshot = json.loads(snapshot_path.read_text())
-        assert "schema_version" in snapshot
-        assert "nodes" in snapshot
-        assert "edges" in snapshot
+        # Verify it loads correctly
+        snapshot = store.load("latest")
+        assert snapshot.schema_version >= 1
+        assert snapshot.nodes is not None
+        assert snapshot.edges is not None
 
     def test_scan_nonexistent_path_returns_error(self, tmp_path: Path):
         """Scanning a nonexistent path should return error exit code."""
@@ -553,6 +555,8 @@ class TestSnapshotSaveCommand:
 
     def test_scan_creates_snapshot(self, clean_layered_app: Path):
         """Scan should automatically create a 'latest' snapshot."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         result = run_pacta(
             "scan",
             str(clean_layered_app),
@@ -564,11 +568,13 @@ class TestSnapshotSaveCommand:
 
         assert result.returncode == 0, f"stderr: {result.stderr}"
 
-        snapshot_path = clean_layered_app / ".pacta" / "snapshots" / "latest.json"
-        assert snapshot_path.exists(), "Expected latest.json snapshot to be created"
+        store = FsSnapshotStore(repo_root=str(clean_layered_app))
+        assert store.exists("latest"), "Expected 'latest' ref to be created"
 
     def test_snapshot_contains_valid_ir_data(self, clean_layered_app: Path):
         """Saved snapshot should contain valid IR structure."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         # Use scan to create snapshot
         result = run_pacta(
             "scan",
@@ -580,21 +586,23 @@ class TestSnapshotSaveCommand:
         )
         assert result.returncode == 0
 
-        snapshot_path = clean_layered_app / ".pacta" / "snapshots" / "latest.json"
-        snapshot = json.loads(snapshot_path.read_text())
+        store = FsSnapshotStore(repo_root=str(clean_layered_app))
+        snapshot = store.load("latest")
 
         # Check expected fields
-        assert "schema_version" in snapshot
-        assert "nodes" in snapshot
-        assert "edges" in snapshot
-        assert isinstance(snapshot["nodes"], list)
-        assert isinstance(snapshot["edges"], list)
+        assert snapshot.schema_version >= 1
+        assert snapshot.nodes is not None
+        assert snapshot.edges is not None
+        assert isinstance(snapshot.nodes, tuple)
+        assert isinstance(snapshot.edges, tuple)
 
         # Should have detected Python modules
-        assert len(snapshot["nodes"]) > 0, "Expected some nodes to be detected"
+        assert len(snapshot.nodes) > 0, "Expected some nodes to be detected"
 
     def test_snapshot_overwrite_on_repeated_scan(self, clean_layered_app: Path):
-        """Running scan again should update the snapshot."""
+        """Running scan again with changes should create a new object and update ref."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         # Scan first time
         run_pacta(
             "scan",
@@ -605,16 +613,13 @@ class TestSnapshotSaveCommand:
             str(clean_layered_app / "rules.pacta.yml"),
         )
 
-        snapshot_path = clean_layered_app / ".pacta" / "snapshots" / "latest.json"
-        first_mtime = snapshot_path.stat().st_mtime
+        store = FsSnapshotStore(repo_root=str(clean_layered_app))
+        first_hash = store.resolve_ref("latest")
+        first_snapshot = store.load("latest")
+        first_node_count = len(first_snapshot.nodes)
 
-        # Modify something
+        # Modify something - add a new file
         (clean_layered_app / "src" / "domain" / "new_file.py").write_text("x = 1")
-
-        # Small delay to ensure different mtime
-        import time
-
-        time.sleep(0.1)
 
         # Scan second time
         run_pacta(
@@ -626,8 +631,13 @@ class TestSnapshotSaveCommand:
             str(clean_layered_app / "rules.pacta.yml"),
         )
 
-        second_mtime = snapshot_path.stat().st_mtime
-        assert second_mtime > first_mtime, "Snapshot file should have been updated"
+        second_hash = store.resolve_ref("latest")
+        second_snapshot = store.load("latest")
+
+        # Hash should be different (content changed)
+        assert second_hash != first_hash, "Hash should change when content changes"
+        # Should have more nodes now
+        assert len(second_snapshot.nodes) > first_node_count, "Should detect new module"
 
 
 class TestSaveRefCommand:
@@ -635,6 +645,8 @@ class TestSaveRefCommand:
 
     def test_scan_with_save_ref_creates_baseline(self, clean_layered_app: Path):
         """Test that scan --save-ref creates a named snapshot."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         result = run_pacta(
             "scan",
             str(clean_layered_app),
@@ -648,19 +660,21 @@ class TestSaveRefCommand:
 
         assert result.returncode == 0, f"stderr: {result.stderr}\nstdout: {result.stdout}"
 
-        # Verify baseline was created
-        baseline_path = clean_layered_app / ".pacta" / "snapshots" / "baseline.json"
-        assert baseline_path.exists(), "Expected baseline.json to be created"
+        # Verify baseline ref was created
+        store = FsSnapshotStore(repo_root=str(clean_layered_app))
+        assert store.exists("baseline"), "Expected 'baseline' ref to be created"
 
         # Verify it's a valid snapshot with violations field
-        baseline = json.loads(baseline_path.read_text())
-        assert "schema_version" in baseline
-        assert "nodes" in baseline
-        assert "edges" in baseline
-        assert "violations" in baseline
+        snapshot = store.load("baseline")
+        assert snapshot.schema_version >= 1
+        assert snapshot.nodes is not None
+        assert snapshot.edges is not None
+        assert snapshot.violations is not None
 
     def test_scan_save_ref_captures_violations(self, violating_layered_app: Path):
         """Test that --save-ref captures current violations."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         result = run_pacta(
             "scan",
             str(violating_layered_app),
@@ -676,13 +690,15 @@ class TestSaveRefCommand:
         assert result.returncode == 1, f"stderr: {result.stderr}\nstdout: {result.stdout}"
 
         # Verify baseline contains violations
-        baseline_path = violating_layered_app / ".pacta" / "snapshots" / "baseline.json"
-        baseline = json.loads(baseline_path.read_text())
+        store = FsSnapshotStore(repo_root=str(violating_layered_app))
+        snapshot = store.load("baseline")
 
-        assert len(baseline["violations"]) > 0, "Baseline should contain violations"
+        assert len(snapshot.violations) > 0, "Baseline should contain violations"
 
     def test_scan_save_ref_custom_name(self, clean_layered_app: Path):
         """Test --save-ref with custom ref name."""
+        from pacta.snapshot.store import FsSnapshotStore
+
         result = run_pacta(
             "scan",
             str(clean_layered_app),
@@ -696,8 +712,8 @@ class TestSaveRefCommand:
 
         assert result.returncode == 0
 
-        baseline_path = clean_layered_app / ".pacta" / "snapshots" / "my-custom-baseline.json"
-        assert baseline_path.exists()
+        store = FsSnapshotStore(repo_root=str(clean_layered_app))
+        assert store.exists("my-custom-baseline"), "Custom ref should exist"
 
 
 class TestDiffCommand:
@@ -712,7 +728,7 @@ class TestDiffCommand:
     """
 
     def _create_snapshot(self, repo: Path, ref: str) -> None:
-        """Helper to create a snapshot by scanning and copying latest."""
+        """Helper to create a snapshot by scanning with --save-ref."""
         run_pacta(
             "scan",
             str(repo),
@@ -720,9 +736,9 @@ class TestDiffCommand:
             str(repo / "architecture.json"),
             "--rules",
             str(repo / "rules.pacta.yml"),
+            "--save-ref",
+            ref,
         )
-        snapshots_dir = repo / ".pacta" / "snapshots"
-        shutil.copy(snapshots_dir / "latest.json", snapshots_dir / f"{ref}.json")
 
     def test_diff_between_identical_snapshots(self, clean_layered_app: Path):
         """Diffing identical snapshots should show no changes."""
@@ -935,7 +951,7 @@ class TestFullWorkflow:
         # Note: exit code may be 1 if violations exist, but baseline is still created
 
     def _create_snapshot(self, repo: Path, ref: str) -> None:
-        """Helper to create a snapshot by scanning and copying latest."""
+        """Helper to create a snapshot using scan --save-ref."""
         run_pacta(
             "scan",
             str(repo),
@@ -943,9 +959,9 @@ class TestFullWorkflow:
             str(repo / "architecture.json"),
             "--rules",
             str(repo / "rules.pacta.yml"),
+            "--save-ref",
+            ref,
         )
-        snapshots_dir = repo / ".pacta" / "snapshots"
-        shutil.copy(snapshots_dir / "latest.json", snapshots_dir / f"{ref}.json")
 
     def test_workflow_baseline_modify_scan_diff(self, clean_layered_app: Path):
         """

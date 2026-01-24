@@ -250,12 +250,37 @@ def test_builder_preserves_given_created_at(meta):
     assert snap.meta.created_at == "2026-01-01T00:00:00Z"
 
 
-def test_store_resolve_path_default_refs(tmp_path: Path):
+def test_store_refs_and_objects(tmp_path: Path):
+    """Test the new content-addressed storage with refs."""
     from pacta.snapshot.store import FsSnapshotStore
+    from pacta.snapshot.builder import DefaultSnapshotBuilder
+    from pacta.snapshot.types import SnapshotMeta
 
     store = FsSnapshotStore(repo_root=str(tmp_path))
-    assert store.resolve_path("latest") == tmp_path / ".pacta/snapshots/latest.json"
-    assert store.resolve_path("baseline") == tmp_path / ".pacta/snapshots/baseline.json"
+    meta = SnapshotMeta(repo_root=str(tmp_path))
+    ir = {"nodes": [], "edges": []}
+    snap = DefaultSnapshotBuilder().build(ir, meta=meta)
+
+    # Save with refs
+    result = store.save(snap, refs=["latest", "baseline"])
+
+    # Check object was created
+    assert result.object_path.exists()
+    assert result.short_hash in result.object_path.name
+
+    # Check refs were created
+    assert store.ref_exists("latest")
+    assert store.ref_exists("baseline")
+    assert store.resolve_ref("latest") == result.short_hash
+    assert store.resolve_ref("baseline") == result.short_hash
+
+    # Load by ref
+    loaded = store.load("latest")
+    assert loaded.schema_version == snap.schema_version
+
+    # Load by hash
+    loaded2 = store.load(result.short_hash)
+    assert loaded2.schema_version == snap.schema_version
 
 
 def test_store_resolve_path_explicit_relative_json(tmp_path: Path):
@@ -282,15 +307,16 @@ def test_store_save_creates_dirs_and_is_deterministic(tmp_path: Path, meta):
     ir = {"nodes": [make_node("b"), make_node("a")], "edges": [make_edge("a", "b")]}
     snap = DefaultSnapshotBuilder().build(ir, meta=meta)
 
-    p1 = store.save(snap, "latest")
-    assert p1.exists()
+    result1 = store.save(snap, refs=["latest"])
+    assert result1.object_path.exists()
 
-    text1 = p1.read_text(encoding="utf-8")
+    text1 = result1.object_path.read_text(encoding="utf-8")
 
-    # Save again: should be byte-for-byte identical (deterministic JSON)
-    p2 = store.save(snap, "latest")
-    text2 = p2.read_text(encoding="utf-8")
+    # Save again: should produce same hash (content-addressed)
+    result2 = store.save(snap, refs=["latest"])
+    text2 = result2.object_path.read_text(encoding="utf-8")
     assert text1 == text2
+    assert result1.short_hash == result2.short_hash  # Same content = same hash
 
 
 def test_store_roundtrip_save_load(tmp_path: Path, meta, monkeypatch: pytest.MonkeyPatch):
@@ -310,7 +336,7 @@ def test_store_roundtrip_save_load(tmp_path: Path, meta, monkeypatch: pytest.Mon
     ir = {"nodes": [make_node("a")], "edges": [make_edge("a", "b")]}
     snap = DefaultSnapshotBuilder().build(ir, meta=meta)
 
-    store.save(snap, "latest")
+    store.save(snap, refs=["latest"])
     loaded = store.load("latest")
 
     assert loaded.schema_version == snap.schema_version

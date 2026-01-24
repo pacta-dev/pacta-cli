@@ -45,6 +45,7 @@ Codebases rot. The "clean architecture" you designed becomes spaghetti after a f
 - **Layer enforcement** — domain can't import from infra, etc.
 - **Baseline mode** — fail only on *new* violations, not legacy debt
 - **Snapshots** — version your architecture like code
+- **History tracking** — view architecture evolution over time
 
 ## Quick example
 
@@ -106,6 +107,24 @@ pacta scan . --model architecture.yml --rules rules.pacta.yml --save-ref baselin
 pacta scan . --model architecture.yml --rules rules.pacta.yml --baseline baseline
 ```
 
+## History tracking
+
+Every scan creates a content-addressed snapshot. View your architecture evolution:
+
+```bash
+# View timeline
+$ pacta history show --last 5
+
+Architecture Timeline (5 entries)
+============================================================
+a1b2c3d4  2025-01-22  abc1234  main    42 nodes  87 edges  2 violations (latest)
+e5f6g7h8  2025-01-20  def5678  main    42 nodes  85 edges  4 violations
+...
+
+# Export for external tools
+pacta history export --format json > history.json
+```
+
 ## Docs
 
 - [CLI Reference](https://akhundmurad.github.io/pacta/cli/)
@@ -114,8 +133,11 @@ pacta scan . --model architecture.yml --rules rules.pacta.yml --baseline baselin
 
 ## Roadmap (short)
 
-- Open-source CLI and analysis engine
-- Proprietary hosted service with:
+- [x] Open-source CLI and analysis engine
+- [x] Content-addressed snapshots with history tracking
+- [ ] Architecture visualization (Mermaid, D2)
+- [ ] Health metrics (drift score, instability)
+- [ ] Proprietary hosted service with:
   - Cross-repository insights
   - Historical trend analysis
   - Team-level governance and reporting

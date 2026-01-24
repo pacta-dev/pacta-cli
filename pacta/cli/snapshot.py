@@ -6,6 +6,7 @@ from pacta.core.engine import DefaultPactaEngine
 from pacta.snapshot.builder import DefaultSnapshotBuilder
 from pacta.snapshot.store import FsSnapshotStore
 from pacta.snapshot.types import SnapshotMeta
+from pacta.vcs.git import GitVCSProvider
 
 
 def save(
@@ -51,14 +52,26 @@ def save(
     engine = DefaultPactaEngine()
     ir = engine.build_ir(cfg)
 
+    # Get VCS context
+    vcs = GitVCSProvider()
+    commit = vcs.current_commit(repo_root)
+    branch = vcs.current_branch(repo_root)
+
     # Build and save snapshot (no violations)
-    meta = SnapshotMeta(repo_root=str(repo_root), tool_version=tool_version)
+    meta = SnapshotMeta(
+        repo_root=str(repo_root),
+        tool_version=tool_version,
+        commit=commit,
+        branch=branch,
+    )
     snap = DefaultSnapshotBuilder().build(ir, meta=meta)
 
     store = FsSnapshotStore(repo_root=str(repo_root))
-    written = store.save(snap, ref)
+    result = store.save(snap, refs=[ref])
 
-    print(f"Saved snapshot: {written}")
+    print(f"Saved snapshot: {result.short_hash}")
+    print(f"  Object: {result.object_path}")
+    print(f"  Refs: {', '.join(result.refs_updated)}")
     print(f"  Nodes: {len(snap.nodes)}")
     print(f"  Edges: {len(snap.edges)}")
 

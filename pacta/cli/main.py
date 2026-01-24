@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from pacta.cli import diff, scan, snapshot
+from pacta.cli import diff, history, scan, snapshot
 from pacta.cli.exitcodes import EXIT_ENGINE_ERROR
 
 
@@ -41,6 +41,22 @@ def build_parser() -> argparse.ArgumentParser:
     diff_p.add_argument("--from", dest="from_ref", required=True, help="From snapshot ref.")
     diff_p.add_argument("--to", dest="to_ref", required=True, help="To snapshot ref.")
 
+    # history
+    hist = sub.add_parser("history", help="View architecture history.")
+    hist_sub = hist.add_subparsers(dest="history_cmd", required=True)
+
+    hist_show = hist_sub.add_parser("show", help="Show architecture timeline.")
+    hist_show.add_argument("path", nargs="?", default=".", help="Repository root (default: .)")
+    hist_show.add_argument("--last", type=int, default=None, help="Show only last N entries.")
+    hist_show.add_argument("--since", default=None, help="Show entries since date (ISO-8601).")
+    hist_show.add_argument("--branch", default=None, help="Filter by branch name.")
+    hist_show.add_argument("--format", choices=["text", "json"], default="text", help="Output format.")
+
+    hist_export = hist_sub.add_parser("export", help="Export history for external processing.")
+    hist_export.add_argument("path", nargs="?", default=".", help="Repository root (default: .)")
+    hist_export.add_argument("--format", choices=["json", "jsonl"], default="json", help="Export format.")
+    hist_export.add_argument("--output", "-o", default=None, help="Output file (default: stdout).")
+
     return p
 
 
@@ -74,6 +90,22 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.cmd == "diff":
             return diff.snapshot_diff(path=args.path, from_ref=args.from_ref, to_ref=args.to_ref)
+
+        if args.cmd == "history":
+            if args.history_cmd == "show":
+                return history.show(
+                    path=args.path,
+                    last=args.last,
+                    since=args.since,
+                    branch=args.branch,
+                    format=args.format,
+                )
+            if args.history_cmd == "export":
+                return history.export(
+                    path=args.path,
+                    format=args.format,
+                    output=args.output,
+                )
 
         print("Unknown command.", file=sys.stderr)
         return EXIT_ENGINE_ERROR

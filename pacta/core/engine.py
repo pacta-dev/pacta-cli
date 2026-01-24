@@ -89,6 +89,7 @@ class DefaultPactaEngine:
         # 0) VCS context (optional)
         # ----------------------------
         commit = self.vcs.current_commit(cfg.repo_root)
+        branch = self.vcs.current_branch(cfg.repo_root)
 
         # ----------------------------
         # 1) Load analyzers
@@ -225,6 +226,7 @@ class DefaultPactaEngine:
             meta=SnapshotMeta(
                 repo_root=str(cfg.repo_root),
                 commit=commit,
+                branch=branch,
             ),
             violations=violations,
         )
@@ -249,9 +251,12 @@ class DefaultPactaEngine:
                     )
                 )
 
-        # Save snapshot under save_ref if specified, otherwise default to "latest"
-        ref = cfg.save_ref if cfg.save_ref else "latest"
-        snapshot_store.save(snapshot, ref=ref)
+        # Save snapshot as content-addressed object with refs
+        # Always update 'latest' ref, plus any user-specified ref
+        refs_to_update = ["latest"]
+        if cfg.save_ref and cfg.save_ref != "latest":
+            refs_to_update.append(cfg.save_ref)
+        snapshot_store.save(snapshot, refs=refs_to_update)
 
         # ----------------------------
         # 9) Build report
