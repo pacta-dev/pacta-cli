@@ -24,6 +24,9 @@ classifiers = [
 
 dependencies = ["pyyaml>=6.0,<7.0"]
 
+[project.optional-dependencies]
+viz = ["matplotlib>=3.8"]
+
 [project.urls]
 Homepage = "https://github.com/akhundMurad/pacta"
 Documentation = "https://akhundmurad.github.io/pacta/"

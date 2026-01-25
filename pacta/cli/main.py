@@ -57,6 +57,23 @@ def build_parser() -> argparse.ArgumentParser:
     hist_export.add_argument("--format", choices=["json", "jsonl"], default="json", help="Export format.")
     hist_export.add_argument("--output", "-o", default=None, help="Output file (default: stdout).")
 
+    hist_trends = hist_sub.add_parser("trends", help="Show metric trends over time.")
+    hist_trends.add_argument("path", nargs="?", default=".", help="Repository root (default: .)")
+    hist_trends.add_argument(
+        "--metric",
+        choices=["violations", "nodes", "edges", "density"],
+        default="violations",
+        help="Metric to track (default: violations).",
+    )
+    hist_trends.add_argument("--last", type=int, default=None, help="Show only last N entries.")
+    hist_trends.add_argument("--since", default=None, help="Show entries since date (ISO-8601).")
+    hist_trends.add_argument("--branch", default=None, help="Filter by branch name.")
+    hist_trends.add_argument("--width", type=int, default=60, help="Chart width (default: 60).")
+    hist_trends.add_argument("--format", choices=["text", "json"], default="text", help="Output format.")
+    hist_trends.add_argument(
+        "--output", "-o", default=None, help="Output file for image export (PNG/SVG). Requires pacta[viz]."
+    )
+
     return p
 
 
@@ -103,6 +120,17 @@ def main(argv: list[str] | None = None) -> int:
             if args.history_cmd == "export":
                 return history.export(
                     path=args.path,
+                    format=args.format,
+                    output=args.output,
+                )
+            if args.history_cmd == "trends":
+                return history.trends(
+                    path=args.path,
+                    metric=args.metric,
+                    last=args.last,
+                    since=args.since,
+                    branch=args.branch,
+                    width=args.width,
                     format=args.format,
                     output=args.output,
                 )
