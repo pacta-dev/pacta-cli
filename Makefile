@@ -1,4 +1,4 @@
-.PHONY: install dev test lint format typecheck ty docs docs-build build clean help
+.PHONY: install dev test lint format typecheck ty docs docs-build build clean changelog help
 
 install:
 	uv sync
@@ -31,6 +31,9 @@ docs-build:
 build:
 	uv build
 
+changelog:
+	git cliff -o CHANGELOG.md
+
 clean:
 	rm -rf dist build *.egg-info .pytest_cache .mypy_cache .ruff_cache site
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
@@ -47,4 +50,5 @@ help:
 	@echo "  docs       - Serve documentation locally"
 	@echo "  docs-build - Build documentation"
 	@echo "  build      - Build package"
+	@echo "  changelog  - Generate CHANGELOG.md from commits"
 	@echo "  clean      - Remove build artifacts"

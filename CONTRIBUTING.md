@@ -103,7 +103,40 @@ git checkout -b feature/my-feature
 
 - Follow the existing coding style (enforced by ruff)
 - Add tests for new features in the appropriate `tests/` subdirectory
-- Keep commits focused and descriptive
+- Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages
+
+### Commit Message Format
+
+We use conventional commits to auto-generate the changelog. Format:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+```
+
+**Types:**
+
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `test` | Adding or updating tests |
+| `chore` | Maintenance tasks |
+| `perf` | Performance improvement |
+
+**Examples:**
+
+```bash
+feat(cli): add history trends command
+fix(rules): handle empty when block gracefully
+docs(readme): add installation instructions
+refactor(ir): simplify node merging logic
+```
+
+The changelog is generated with `make changelog` (requires [git-cliff](https://git-cliff.org/)).
 
 ### 4. Run Tests and Checks
 
