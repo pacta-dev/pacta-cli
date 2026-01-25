@@ -206,6 +206,95 @@ pacta history export . -o export.json
 }
 ```
 
+## history trends
+
+Show metric trends over time with ASCII charts or export as images.
+
+```bash
+pacta history trends [PATH] [OPTIONS]
+```
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--metric {violations,nodes,edges,density}` | `violations` | Metric to track |
+| `--last N` | - | Show only last N entries |
+| `--since DATE` | - | Show entries since date (ISO-8601) |
+| `--branch NAME` | - | Filter by branch name |
+| `--width N` | `60` | Chart width in characters |
+| `--format {text,json}` | `text` | Output format |
+| `-o, --output FILE` | - | Export chart as image (PNG/SVG) |
+
+**Metrics:**
+
+| Metric | Description |
+|--------|-------------|
+| `violations` | Total violation count (default) |
+| `nodes` | Architecture component count |
+| `edges` | Dependency count |
+| `density` | Coupling ratio (edges/nodes) |
+
+**Examples:**
+
+```bash
+# Show violation trends (default)
+pacta history trends .
+
+# Show node count trends
+pacta history trends . --metric nodes
+
+# Show density trends (edges/nodes ratio)
+pacta history trends . --metric density
+
+# Filter by branch and limit
+pacta history trends . --branch main --last 10
+
+# JSON output for scripting
+pacta history trends . --format json
+
+# Export as PNG image (requires pacta[viz])
+pacta history trends . --output trends.png
+
+# Export as SVG for docs/presentations
+pacta history trends . --metric violations --output violations.svg
+```
+
+**Image Export:**
+
+To export charts as images, install the visualization extras:
+
+```bash
+pip install pacta[viz]
+```
+
+This adds matplotlib support for PNG, SVG, and PDF export.
+
+![Trends Example](https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/trends-example.png)
+
+**Example output:**
+
+```
+Violations Trend (5 entries)
+============================
+
+  5 |      *
+  4 |  *       *
+  3 |              *
+  2 |                  *
+  1 |
+  0 |
+    +--------------------
+      Jan 15      Jan 22
+
+Trend: Improving (-3 over period)
+First: 4 violations (Jan 15)
+Last:  2 violations (Jan 22)
+
+Average: 3 violations
+Min: 2, Max: 5
+```
+
 ## Exit Codes
 
 | Code | Meaning |

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo-ascii.png" alt="Pacta" width="400">
+  <img src="https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/logo-ascii.png" alt="Pacta" width="400">
 </p>
 
 <p align="center">
@@ -46,6 +46,7 @@ Codebases rot. The "clean architecture" you designed becomes spaghetti after a f
 - **Baseline mode** — fail only on *new* violations, not legacy debt
 - **Snapshots** — version your architecture like code
 - **History tracking** — view architecture evolution over time
+- **Trend analysis** — track violations, nodes, edges over time with charts
 
 ## Quick example
 
@@ -121,9 +122,19 @@ a1b2c3d4  2025-01-22  abc1234  main    42 nodes  87 edges  2 violations (latest)
 e5f6g7h8  2025-01-20  def5678  main    42 nodes  85 edges  4 violations
 ...
 
+# View trends over time
+$ pacta history trends . --metric violations
+
+# Export chart as image (requires pacta[viz])
+$ pacta history trends . --output trends.png
+
 # Export for external tools
 pacta history export --format json > history.json
 ```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/trends-example.png" alt="Trends Chart" width="600">
+</p>
 
 ## Docs
 
@@ -135,6 +146,7 @@ pacta history export --format json > history.json
 
 - [x] Open-source CLI and analysis engine
 - [x] Content-addressed snapshots with history tracking
+- [x] Trend analysis with chart export
 - [ ] Architecture visualization (Mermaid, D2)
 - [ ] Health metrics (drift score, instability)
 - [ ] Proprietary hosted service with:
