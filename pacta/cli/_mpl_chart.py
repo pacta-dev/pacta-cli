@@ -1,11 +1,3 @@
-"""
-Matplotlib chart rendering for image export.
-
-This module requires matplotlib (install with `pip install pacta[viz]`).
-"""
-
-from __future__ import annotations
-
 from datetime import datetime
 from pathlib import Path
 

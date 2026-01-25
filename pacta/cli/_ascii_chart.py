@@ -1,12 +1,3 @@
-"""
-ASCII chart rendering for terminal output.
-
-Provides simple chart rendering without external dependencies.
-"""
-
-from __future__ import annotations
-
-
 def render_line_chart(
     values: list[float],
     labels: list[str],
