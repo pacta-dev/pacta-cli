@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Architecture Testing & Architecture-as-Code</strong>
+  <strong>Architecture Governance & Architecture-as-Code</strong>
 </p>
 
 <p align="center">
@@ -20,35 +20,41 @@
 
 ---
 
-> **Warning:** Experimental. Expect breaking changes.
+> **Warning:** Experimental. Expect breaking changes until release 0.1.0
 
-Pacta enforces architectural rules in your codebase. Define layers, set boundaries, catch violations in CI.
+Pacta is an architecture governance tool that helps teams define architectural intent, gain insights through metrics and historical trends, detect architectural drift, and evolve codebases safely without blocking delivery.
+
+```bash
+pip install pacta
+```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/demo.gif" alt="Pacta Demo" width="700">
+</p>
 
 Supported languages:
+
 - Python
 - Java (coming soon)
 - Go (coming soon)
 - C# (coming soon)
 
-```bash
-pip install pacta
-pacta scan . --model architecture.yml --rules rules.pacta.yml
-```
-
 ## Why?
 
-Codebases rot. The "clean architecture" you designed becomes spaghetti after a few quarters. Pacta catches violations early — in PRs, not post-mortems.
+Codebases rot. Architecture degrades through small changes no one tracks. Pacta turns architecture into something measurable, reviewable, and enforceable — catching drift early, not months later.
 
 ## What it does
 
-- **Static analysis** — parses Python AST, builds import graph
+- **Static analysis** — parses Python AST, builds a system graph
 - **Layer enforcement** — domain can't import from infra, etc.
-- **Baseline mode** — fail only on *new* violations, not legacy debt
 - **Snapshots** — version your architecture like code
+- **Baseline mode** — fail only on *new* violations, not legacy debt
 - **History tracking** — view architecture evolution over time
 - **Trend analysis** — track violations, nodes, edges over time with charts
 
 ## Quick example
+
+> This is a minimal example. See the docs for advanced rules, baselines, and history.
 
 Define your layers in `architecture.yml`:
 
@@ -96,7 +102,7 @@ $ pacta scan . --model architecture.yml --rules rules.pacta.yml
     Domain layer must not import from Infrastructure
 ```
 
-## Baseline workflow
+### Baseline workflow
 
 Got legacy violations? Save a baseline and only fail on new ones:
 
@@ -108,33 +114,17 @@ pacta scan . --model architecture.yml --rules rules.pacta.yml --save-ref baselin
 pacta scan . --model architecture.yml --rules rules.pacta.yml --baseline baseline
 ```
 
-## History tracking
+### History tracking
 
-Every scan creates a content-addressed snapshot. View your architecture evolution:
+Every scan creates a content-addressed snapshot. Inspect how your architecture evolves over time:
 
 ```bash
 # View timeline
 $ pacta history show --last 5
 
-Architecture Timeline (5 entries)
-============================================================
-a1b2c3d4  2025-01-22  abc1234  main    42 nodes  87 edges  2 violations (latest)
-e5f6g7h8  2025-01-20  def5678  main    42 nodes  85 edges  4 violations
-...
-
-# View trends over time
-$ pacta history trends . --metric violations
-
-# Export chart as image (requires pacta[viz])
-$ pacta history trends . --output trends.png
-
-# Export for external tools
-pacta history export --format json > history.json
+# View trends over time (violations, nodes, edges, coupling)
+$ pacta history trends .
 ```
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/trends-example.png" alt="Trends Chart" width="600">
-</p>
 
 ## Docs
 
@@ -149,7 +139,7 @@ pacta history export --format json > history.json
 - [x] Trend analysis with chart export
 - [ ] Architecture visualization (Mermaid, D2)
 - [ ] Health metrics (drift score, instability)
-- [ ] Proprietary hosted service with:
+- [ ] Optional hosted service (future):
   - Cross-repository insights
   - Historical trend analysis
   - Team-level governance and reporting
