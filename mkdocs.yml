@@ -26,6 +26,11 @@ nav:
     - CLI Reference: cli.md
     - Architecture Model: architecture.md
     - Rules DSL: rules.md
+  - Examples:
+    - Overview: examples/index.md
+    - Simple Layered App: examples/simple-layered-app.md
+    - Hexagonal Architecture: examples/hexagonal-app.md
+    - Legacy Migration: examples/legacy-migration.md
   - Integration:
     - CI/CD: ci-integration.md
   - Reference:
@@ -35,13 +40,24 @@ nav:
 
 markdown_extensions:
   - admonition
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: ['.']
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.details
   - attr_list
   - md_in_html
   - tables
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+
+extra_css:
+  - stylesheets/extra.css

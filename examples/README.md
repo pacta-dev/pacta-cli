@@ -1,64 +1,35 @@
-# Pacta Examples
+# Examples
 
-## simple-layered-app
+Pacta includes several example projects demonstrating different architectural patterns and use cases.
 
-A Python application demonstrating clean architecture with four layers:
+## Available Examples
 
-```
-src/
-├── ui/           # Controllers, API endpoints
-├── application/  # Use cases, services
-├── domain/       # Business logic, models
-└── infra/        # Repositories, database
-```
+| Example | Description | Best For |
+|---------|-------------|----------|
+| [Simple Layered App](simple-layered-app.md) | Classic N-tier architecture | Teams familiar with layered architecture |
+| [Hexagonal Architecture](hexagonal-app.md) | Ports and Adapters pattern | Domain-driven design, high testability |
+| [Legacy Migration](legacy-migration.md) | Baseline workflow for brownfield | Existing codebases, incremental adoption |
 
-### Files
+## Quick Start
 
-- `architecture.yml` - Defines layers and their file patterns
-- `rules.pacta.yml` - Architectural rules (e.g., domain cannot depend on infra)
+Each example includes:
 
-### Try it
+- `architecture.yml` - System and layer definitions
+- `rules.pacta.yml` - Architectural constraints
+- `src/` - Sample Python code demonstrating the architecture
+
+To run any example:
 
 ```bash
-cd simple-layered-app
-
-# Scan for violations
-pacta scan src \
-  --model architecture.yml \
-  --rules rules.pacta.yml
-
-# Quiet mode (summary only)
-pacta scan src \
-  --model architecture.yml \
-  --rules rules.pacta.yml -q
-
-# Verbose mode (all details)
-pacta scan src \
-  --model architecture.yml \
-  --rules rules.pacta.yml -v
-
-# Save a baseline
-pacta scan src \
-  --model architecture.yml \
-  --rules rules.pacta.yml \
-  --save-ref baseline
-
-# Compare against baseline
-pacta scan src \
-  --model architecture.yml \
-  --rules rules.pacta.yml \
-  --baseline baseline
-
-# Save architecture snapshot (without running rules)
-pacta snapshot save src \
-  --model architecture.yml \
-  --ref v1
-
-# Save another snapshot
-pacta snapshot save src \
-  --model architecture.yml \
-  --ref v2
-
-# Compare two snapshots
-pacta diff src --from v1 --to v2
+cd examples/<example-name>
+pacta scan . --model architecture.yml --rules rules.pacta.yml
 ```
+
+## Creating Your Own
+
+1. Copy the example closest to your needs
+2. Modify `architecture.yml` to match your directory structure
+3. Adjust `rules.pacta.yml` for your constraints
+4. Run `pacta scan` and iterate
+
+See the [Configuration Reference](../configuration.md) for full schema documentation.

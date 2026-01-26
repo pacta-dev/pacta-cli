@@ -1,0 +1,153 @@
+# Legacy Migration Rules
+#
+# These rules define the target architecture for new code.
+# Existing violations in legacy code are tracked via baseline.
+#
+# Strategy:
+# 1. Create baseline with current violations
+# 2. New code must follow rules (CI fails on new violations)
+# 3. Gradually fix legacy violations over time
+# 4. Track progress with `pacta history trends`
+
+# CLEAN CODE RULES - Apply to all code
+
+# Services should not depend on API layer
+rule:
+  id: no_service_to_api
+  name: Services must not depend on API
+  description: |
+    Service layer contains business logic and should not know about
+    HTTP concerns like controllers, request/response objects.
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == services
+      - to.layer == api
+  action: forbid
+  message: Service layer must not depend on API layer
+  suggestion: Keep business logic independent of presentation
+
+# Data layer should not depend on API
+rule:
+  id: no_data_to_api
+  name: Data layer must not depend on API
+  description: Data access should not know about HTTP concerns
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == data
+      - to.layer == api
+  action: forbid
+  message: Data layer must not depend on API layer
+
+# Data layer should not depend on Services (inverted dependency)
+rule:
+  id: no_data_to_services
+  name: Data layer must not depend on Services
+  description: Repositories should not call business logic
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == data
+      - to.layer == services
+  action: forbid
+  message: Data layer must not depend on Service layer
+  suggestion: Data layer should only be called by services, not call them
+
+# LEGACY ISOLATION - Prevent new code from depending on legacy
+
+# New code (API) should not import from legacy
+rule:
+  id: no_api_to_legacy
+  name: API must not depend on Legacy
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == api
+      - to.layer == legacy
+  action: forbid
+  message: API must not import from legacy modules
+
+# New code (Services) should not import from legacy
+rule:
+  id: no_services_to_legacy
+  name: Services must not depend on Legacy
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == services
+      - to.layer == legacy
+  action: forbid
+  message: Services must not import from legacy modules
+
+# New code (Data) should not import from legacy
+rule:
+  id: no_data_to_legacy
+  name: Data must not depend on Legacy
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == data
+      - to.layer == legacy
+  action: forbid
+  message: Data layer must not import from legacy modules
+
+# ALLOWED DEPENDENCIES
+
+# API can depend on Services (normal flow)
+rule:
+  id: api_uses_services
+  name: API can use Services
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == api
+      - to.layer == services
+  action: allow
+  message: API correctly calling service layer
+
+# Services can depend on Data (normal flow)
+rule:
+  id: services_use_data
+  name: Services can use Data
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == services
+      - to.layer == data
+  action: allow
+  message: Services correctly using data layer
+
+# Legacy can depend on new code (it's being migrated)
+rule:
+  id: legacy_uses_services
+  name: Legacy can use Services
+  description: Legacy code can import from new modules during migration
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == legacy
+      - to.layer == services
+  action: allow
+  message: Legacy code using new services (migration in progress)
+
+rule:
+  id: legacy_uses_data
+  name: Legacy can use Data
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == legacy
+      - to.layer == data
+  action: allow
+  message: Legacy code using new data layer (migration in progress)

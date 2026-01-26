@@ -1,0 +1,1 @@
+--8<-- "examples/simple-layered-app/README.md"

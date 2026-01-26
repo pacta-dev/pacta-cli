@@ -1,0 +1,221 @@
+# Hexagonal Architecture Rules
+#
+# Key principles:
+# 1. Domain is at the center and depends on nothing external
+# 2. Ports define boundaries (interfaces) - domain can use outbound ports
+# 3. Adapters implement ports and depend inward toward the domain
+# 4. Dependencies always point inward (toward the domain)
+
+# DOMAIN RULES - The domain must remain pure
+
+# Domain cannot depend on primary adapters
+rule:
+  id: no_domain_to_primary_adapters
+  name: Domain must not depend on Primary Adapters
+  description: |
+    The domain is the core of the hexagon and must not know about
+    the outside world. Adapters are implementation details.
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == adapters-primary
+  action: forbid
+  message: Domain cannot depend on primary adapters
+  suggestion: Define an interface (port) in ports/outbound and implement it in adapters
+
+# Domain cannot depend on secondary adapters
+rule:
+  id: no_domain_to_secondary_adapters
+  name: Domain must not depend on Secondary Adapters
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == adapters-secondary
+  action: forbid
+  message: Domain cannot depend on secondary adapters
+  suggestion: Use outbound ports instead of concrete adapter implementations
+
+# Domain cannot depend on inbound ports (use cases call domain, not vice versa)
+rule:
+  id: no_domain_to_inbound_ports
+  name: Domain must not depend on Inbound Ports
+  description: Inbound ports define use cases that call the domain, not the other way around
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == ports-inbound
+  action: forbid
+  message: Domain cannot depend on inbound ports
+  suggestion: Inbound ports should call domain services, not be called by them
+
+# Domain CAN depend on outbound ports (this is how domain accesses external services)
+rule:
+  id: domain_uses_outbound_ports
+  name: Domain can use Outbound Ports
+  description: Domain uses outbound port interfaces to access repositories and external services
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == domain
+      - to.layer == ports-outbound
+  action: allow
+  message: Domain correctly using outbound port interface
+
+# PORT RULES - Ports are interfaces, they shouldn't depend on adapters
+
+# Inbound ports cannot depend on adapters
+rule:
+  id: no_inbound_ports_to_adapters_primary
+  name: Inbound Ports must not depend on Primary Adapters
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == ports-inbound
+      - to.layer == adapters-primary
+  action: forbid
+  message: Inbound ports cannot depend on adapters
+
+rule:
+  id: no_inbound_ports_to_adapters_secondary
+  name: Inbound Ports must not depend on Secondary Adapters
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == ports-inbound
+      - to.layer == adapters-secondary
+  action: forbid
+  message: Inbound ports cannot depend on adapters
+
+# Outbound ports cannot depend on adapters
+rule:
+  id: no_outbound_ports_to_adapters_primary
+  name: Outbound Ports must not depend on Primary Adapters
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == ports-outbound
+      - to.layer == adapters-primary
+  action: forbid
+  message: Outbound ports cannot depend on adapters
+
+rule:
+  id: no_outbound_ports_to_adapters_secondary
+  name: Outbound Ports must not depend on Secondary Adapters
+  severity: error
+  target: dependency
+  when:
+    all:
+      - from.layer == ports-outbound
+      - to.layer == adapters-secondary
+  action: forbid
+  message: Outbound ports cannot depend on adapters
+
+# Inbound ports can depend on domain (use cases orchestrate domain logic)
+rule:
+  id: inbound_ports_use_domain
+  name: Inbound Ports can use Domain
+  description: Use case interfaces can reference domain types
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == ports-inbound
+      - to.layer == domain
+  action: allow
+  message: Inbound port correctly referencing domain types
+
+# Outbound ports can depend on domain (repository interfaces use domain entities)
+rule:
+  id: outbound_ports_use_domain
+  name: Outbound Ports can use Domain
+  description: Repository interfaces reference domain entities
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == ports-outbound
+      - to.layer == domain
+  action: allow
+  message: Outbound port correctly referencing domain types
+
+# ADAPTER RULES - Adapters connect the outside world to ports
+
+# Primary adapters should use inbound ports (not call domain directly)
+rule:
+  id: primary_adapters_use_inbound_ports
+  name: Primary Adapters should use Inbound Ports
+  description: Controllers and CLI should call use case interfaces, not domain directly
+  severity: warning
+  target: dependency
+  when:
+    all:
+      - from.layer == adapters-primary
+      - to.layer == domain
+  action: forbid
+  message: Primary adapters should use inbound ports, not domain directly
+  suggestion: Call the use case interface in ports/inbound instead
+
+# Secondary adapters implement outbound ports (can depend on them)
+rule:
+  id: secondary_adapters_implement_outbound_ports
+  name: Secondary Adapters implement Outbound Ports
+  description: Repository implementations depend on their port interfaces
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == adapters-secondary
+      - to.layer == ports-outbound
+  action: allow
+  message: Secondary adapter correctly implementing outbound port
+
+# Secondary adapters can use domain (they work with domain entities)
+rule:
+  id: secondary_adapters_use_domain
+  name: Secondary Adapters can use Domain
+  description: Repository implementations work with domain entities
+  severity: info
+  target: dependency
+  when:
+    all:
+      - from.layer == adapters-secondary
+      - to.layer == domain
+  action: allow
+  message: Secondary adapter correctly using domain entities
+
+# Adapters should not depend on each other
+rule:
+  id: no_primary_to_secondary
+  name: Primary Adapters should not depend on Secondary Adapters
+  severity: warning
+  target: dependency
+  when:
+    all:
+      - from.layer == adapters-primary
+      - to.layer == adapters-secondary
+  action: forbid
+  message: Primary adapters should not depend on secondary adapters
+  suggestion: Communicate through ports and domain instead
+
+rule:
+  id: no_secondary_to_primary
+  name: Secondary Adapters should not depend on Primary Adapters
+  severity: warning
+  target: dependency
+  when:
+    all:
+      - from.layer == adapters-secondary
+      - to.layer == adapters-primary
+  action: forbid
+  message: Secondary adapters should not depend on primary adapters
+  suggestion: Communicate through ports and domain instead

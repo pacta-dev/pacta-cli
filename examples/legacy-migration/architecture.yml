@@ -1,0 +1,42 @@
+version: 1
+system:
+  id: legacy-migration
+  name: Legacy Migration Example
+
+containers:
+  main-app:
+    name: Main Application
+    description: |
+      A brownfield application being gradually migrated to clean architecture.
+      Contains both legacy code (violations allowed) and new code (must be clean).
+    code:
+      roots:
+        - src
+      layers:
+        # New clean architecture layers
+        api:
+          name: API Layer
+          description: REST controllers and request/response handling
+          patterns:
+            - src/api/**
+
+        services:
+          name: Service Layer
+          description: Business logic and use cases
+          patterns:
+            - src/services/**
+
+        data:
+          name: Data Layer
+          description: Repositories and data access
+          patterns:
+            - src/data/**
+
+        # Legacy code - will have violations but tracked via baseline
+        legacy:
+          name: Legacy Code
+          description: Old code being gradually refactored
+          patterns:
+            - src/legacy/**
+
+contexts: {}

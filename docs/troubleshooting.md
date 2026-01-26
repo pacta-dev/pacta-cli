@@ -119,7 +119,8 @@ Error: Baseline 'baseline' not found
 
 2. Check that `.pacta/` directory exists and contains snapshots:
    ```bash
-   ls -la .pacta/snapshots/
+   ls -la .pacta/snapshots/objects/
+   ls -la .pacta/snapshots/refs/
    ```
 
 3. If using CI, ensure the `.pacta/` directory is cached or committed
@@ -191,7 +192,10 @@ Coming soon:
 
 ### How do baselines work?
 
-Baselines are content-addressed snapshots of your architecture at a point in time.
+Baselines are content-addressed snapshots of your architecture at a point in time. They're stored in `.pacta/snapshots/`:
+
+- **Objects** (`.pacta/snapshots/objects/`) - Immutable snapshot files named by 8-char hash
+- **Refs** (`.pacta/snapshots/refs/`) - Named pointers (like `baseline`, `latest`) to object hashes
 
 1. **Create baseline:** Saves current violations with a reference name
    ```bash

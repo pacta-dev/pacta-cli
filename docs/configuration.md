@@ -270,15 +270,15 @@ Pacta stores data in a `.pacta/` directory at your repository root.
 
 ```
 .pacta/
-├── snapshots/           # Content-addressed snapshot storage
-│   ├── ab/              # First 2 chars of hash
-│   │   └── cdef1234...  # Snapshot data (JSON)
-│   └── ...
-├── refs/                # Named references to snapshots
-│   ├── latest           # Most recent snapshot
-│   ├── baseline         # Baseline for comparison
-│   └── ...
-└── config.json          # Optional local configuration
+└── snapshots/
+    ├── objects/             # Content-addressed snapshot storage
+    │   ├── a1b2c3d4.json    # 8-char hash prefix filename
+    │   ├── e5f6a7b8.json
+    │   └── ...
+    └── refs/                # Named references to snapshots
+        ├── latest           # Text file containing hash of most recent snapshot
+        ├── baseline         # Text file containing hash (created with --save-ref)
+        └── ...
 ```
 
 ### Snapshots
@@ -313,12 +313,3 @@ Add to `.gitignore` only if you don't need persistent baselines:
 # Ignore Pacta data (not recommended)
 .pacta/
 ```
-
----
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PACTA_NO_COLOR` | Disable colored output | `false` |
-| `PACTA_DATA_DIR` | Override `.pacta/` location | `.pacta/` |

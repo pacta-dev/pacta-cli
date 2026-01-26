@@ -1,0 +1,1 @@
+--8<-- "examples/hexagonal-app/README.md"

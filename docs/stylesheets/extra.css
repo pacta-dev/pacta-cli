@@ -1,0 +1,11 @@
+/* Mermaid diagram styling */
+.mermaid {
+  text-align: center;
+  margin: 1rem 0;
+}
+
+/* Ensure mermaid diagrams are responsive */
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}

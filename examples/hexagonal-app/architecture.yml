@@ -1,0 +1,50 @@
+version: 1
+system:
+  id: hexagonal-app
+  name: Hexagonal Architecture Example
+
+containers:
+  main-app:
+    name: Main Application
+    description: |
+      Demonstrates Hexagonal Architecture (Ports and Adapters).
+      The domain is at the center, ports define boundaries,
+      and adapters connect to the outside world.
+    code:
+      roots:
+        - src
+      layers:
+        # Core business logic - the heart of the hexagon
+        domain:
+          name: Domain
+          description: Core business logic, entities, and domain services
+          patterns:
+            - src/domain/**
+
+        # Ports - interfaces that define how the domain communicates
+        ports-inbound:
+          name: Inbound Ports
+          description: Use case interfaces (driving/primary ports)
+          patterns:
+            - src/ports/inbound/**
+
+        ports-outbound:
+          name: Outbound Ports
+          description: Repository and external service interfaces (driven/secondary ports)
+          patterns:
+            - src/ports/outbound/**
+
+        # Adapters - implementations that connect to the outside world
+        adapters-primary:
+          name: Primary Adapters
+          description: Controllers, CLI, event handlers (driving adapters)
+          patterns:
+            - src/adapters/primary/**
+
+        adapters-secondary:
+          name: Secondary Adapters
+          description: Repository implementations, external API clients (driven adapters)
+          patterns:
+            - src/adapters/secondary/**
+
+contexts: {}
