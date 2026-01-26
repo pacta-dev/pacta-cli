@@ -243,7 +243,7 @@ The `--format json` output follows this structure:
 ```json
 {
   "run_info": {
-    "tool_version": "0.0.3",
+    "tool_version": "0.0.4",
     "timestamp": "2025-01-22T12:00:00+00:00",
     "commit": "abc1234",
     "branch": "main"

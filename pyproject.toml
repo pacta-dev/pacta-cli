@@ -1,6 +1,6 @@
 [project]
 name = "pacta"
-version = "0.0.3"
+version = "0.0.4"
 description = "A Python tool for enforcing and visualizing software architecture."
 readme = "README.md"
 requires-python = ">=3.10"
