@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from pacta.cli import diff, history, scan, snapshot
+from pacta.cli import check, diff, history, scan, snapshot
 from pacta.cli.exitcodes import EXIT_ENGINE_ERROR
 
 
@@ -25,6 +25,19 @@ def build_parser() -> argparse.ArgumentParser:
     verbosity = scan_p.add_mutually_exclusive_group()
     verbosity.add_argument("-q", "--quiet", action="store_true", help="Minimal output (summary only).")
     verbosity.add_argument("-v", "--verbose", action="store_true", help="Verbose output (include all details).")
+
+    # check
+    check_p = sub.add_parser("check", help="Evaluate rules against a snapshot.")
+    check_p.add_argument("path", nargs="?", default=".", help="Repository root (default: .)")
+    check_p.add_argument("--ref", default="latest", help="Snapshot ref to check (default: latest).")
+    check_p.add_argument("--format", choices=["text", "json"], default="text", help="Output format.")
+    check_p.add_argument("--rules", action="append", default=None, help="Rules file path (repeatable).")
+    check_p.add_argument("--model", default=None, help="Architecture model file (architecture.yaml).")
+    check_p.add_argument("--baseline", default=None, help="Baseline snapshot ref.")
+    check_p.add_argument("--save-ref", dest="save_ref", default=None, help="Also save snapshot under this ref.")
+    check_verbosity = check_p.add_mutually_exclusive_group()
+    check_verbosity.add_argument("-q", "--quiet", action="store_true", help="Minimal output (summary only).")
+    check_verbosity.add_argument("-v", "--verbose", action="store_true", help="Verbose output (include all details).")
 
     # snapshot
     snap = sub.add_parser("snapshot", help="Snapshot operations.")
@@ -91,6 +104,21 @@ def main(argv: list[str] | None = None) -> int:
                 model=args.model,
                 baseline=args.baseline,
                 mode=args.mode,
+                save_ref=args.save_ref,
+                verbosity=verbosity,
+                tool_version=args.tool_version,
+            )
+
+        if args.cmd == "check":
+            rules = tuple(args.rules) if args.rules is not None else None
+            verbosity = "quiet" if args.quiet else ("verbose" if args.verbose else "normal")
+            return check.run(
+                path=args.path,
+                ref=args.ref,
+                fmt=args.format,
+                rules=rules,
+                model=args.model,
+                baseline=args.baseline,
                 save_ref=args.save_ref,
                 verbosity=verbosity,
                 tool_version=args.tool_version,

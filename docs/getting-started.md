@@ -38,7 +38,7 @@ containers:
 Now capture a snapshot:
 
 ```bash
-pacta snapshot . --model architecture.yml
+pacta snapshot save . --model architecture.yml
 ```
 
 Pacta just analyzed every module and dependency in your codebase and stored a content-addressed snapshot in `.pacta/`. This snapshot is immutable — a permanent record of your architecture at this moment.
@@ -50,7 +50,7 @@ Pacta just analyzed every module and dependency in your codebase and stored a co
 A week passes. Your team ships features, fixes bugs, refactors code. Run another snapshot:
 
 ```bash
-pacta snapshot . --model architecture.yml
+pacta snapshot save . --model architecture.yml
 ```
 
 Now you have two points in time. See what changed:
@@ -122,9 +122,13 @@ rule:
   message: Domain layer must not import from Infrastructure
 ```
 
-Run a scan with rules:
+Run a check against your snapshot:
 
 ```bash
+# Option A: Check the snapshot you already have
+pacta check . --rules rules.pacta.yml
+
+# Option B: Or do snapshot + check in one step
 pacta scan . --model architecture.yml --rules rules.pacta.yml
 ```
 
@@ -145,12 +149,19 @@ Two violations. But wait — this is a legacy codebase. You can't fix everything
 Save the current state as a baseline:
 
 ```bash
+# One-step:
 pacta scan . --model architecture.yml --rules rules.pacta.yml --save-ref baseline
+
+# Or two-step:
+pacta snapshot save . --model architecture.yml --ref baseline
+pacta check . --ref baseline --rules rules.pacta.yml
 ```
 
-Now future scans compare against this baseline:
+Now future checks compare against this baseline:
 
 ```bash
+pacta check . --rules rules.pacta.yml --baseline baseline
+# Or equivalently:
 pacta scan . --model architecture.yml --rules rules.pacta.yml --baseline baseline
 ```
 

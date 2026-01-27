@@ -221,15 +221,23 @@ repos:
 Add Pacta to your Makefile for easy local runs:
 
 ```makefile
-.PHONY: arch arch-baseline
+.PHONY: arch arch-snapshot arch-check arch-baseline arch-ci
 
-# Run architecture check
+# Full scan (snapshot + check in one step)
 arch:
 	pacta scan . --model architecture.yml --rules rules.pacta.yml
 
+# Two-step workflow
+arch-snapshot:
+	pacta snapshot save . --model architecture.yml
+
+arch-check:
+	pacta check . --rules rules.pacta.yml
+
 # Update baseline
 arch-baseline:
-	pacta scan . --model architecture.yml --rules rules.pacta.yml --save-ref baseline
+	pacta snapshot save . --model architecture.yml --ref baseline
+	pacta check . --ref baseline --rules rules.pacta.yml
 
 # Check against baseline (CI mode)
 arch-ci:

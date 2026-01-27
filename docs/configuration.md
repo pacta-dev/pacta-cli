@@ -295,7 +295,7 @@ References are named pointers to snapshot hashes:
 
 | Ref | Description |
 |-----|-------------|
-| `latest` | Automatically updated on each scan |
+| `latest` | Automatically updated on each scan/check |
 | `baseline` | Created with `--save-ref baseline` |
 | Custom | Any name you choose with `--save-ref <name>` |
 

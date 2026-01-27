@@ -56,7 +56,9 @@ Codebases rot. Architecture degrades through small changes no one tracks. Pacta 
 
 | Git | Pacta |
 |-----|-------|
-| `git commit` | `pacta scan` — capture an architectural snapshot |
+| `git add` | `pacta snapshot save` — capture an architectural snapshot |
+| `git commit --verify` | `pacta check` — evaluate rules against a snapshot |
+| `git commit` | `pacta scan` — snapshot + check in one step |
 | `git log` | `pacta history` — timeline and trends of architectural states |
 | `git diff` | `pacta diff` — compare two snapshots |
 | branch protection | `rules.pacta.yml` — governance that prevents drift |

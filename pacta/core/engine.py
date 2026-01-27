@@ -34,6 +34,13 @@ class ScanResult:
     diff: SnapshotDiff | None
 
 
+@dataclass(frozen=True)
+class CheckResult:
+    snapshot: Snapshot
+    report: Report
+    diff: SnapshotDiff | None
+
+
 # Default engine wiring
 
 
@@ -364,3 +371,147 @@ class DefaultPactaEngine:
             enriched_ir = self.enricher.enrich(normalized_ir, model)
 
         return enriched_ir
+
+    def check(self, cfg: EngineConfig, snapshot: Snapshot) -> CheckResult:
+        """
+        Evaluate rules against an existing snapshot.
+
+        This runs only the rules pipeline (steps 6-9):
+          6. Load + parse + compile rules
+          7. Evaluate rules → violations
+          8. Baseline comparison (optional)
+          9. Build report
+
+        The snapshot's nodes/edges are reconstructed into an ArchitectureIR
+        for rule evaluation.
+
+        Args:
+            cfg: Engine configuration (rules_files, baseline, etc.)
+            snapshot: Existing snapshot to check
+
+        Returns:
+            CheckResult with updated snapshot (including violations) and report
+        """
+        engine_errors: list[EngineError] = []
+        violations: tuple[Violation, ...] = tuple()
+        diff: SnapshotDiff | None = None
+
+        snapshot_store = FsSnapshotStore(repo_root=str(cfg.repo_root))
+
+        # Reconstruct IR from snapshot
+        ir = ArchitectureIR(
+            schema_version=snapshot.schema_version,
+            produced_by="pacta-snapshot",
+            repo_root=snapshot.meta.repo_root,
+            nodes=snapshot.nodes,
+            edges=snapshot.edges,
+        )
+
+        # Optionally load + enrich with model
+        model: ArchitectureModel | None = None
+        enriched_ir = ir
+        if cfg.model_file and cfg.model_file.exists():
+            try:
+                model = self.model_loader.load(cfg.model_file)
+                engine_errors.extend(self.model_validator.validate(model))
+                model = self.model_resolver.resolve(model)
+            except Exception as e:
+                engine_errors.append(
+                    EngineError.from_dict(
+                        {
+                            "type": "config_error",
+                            "message": "Failed to load architecture model",
+                            "location": {"file": str(cfg.model_file), "start": {"line": 1, "column": 1}},
+                            "details": {"error": repr(e)},
+                        }
+                    )
+                )
+                model = None
+
+            if model is not None:
+                try:
+                    enriched_ir = self.enricher.enrich(ir, model)
+                except Exception as e:
+                    engine_errors.append(
+                        EngineError(
+                            type="runtime_error",
+                            message="Failed to enrich IR with architecture model mapping",
+                            location=None,
+                            details={"error": repr(e)},
+                        )
+                    )
+
+        # 6) Load + parse + compile rules
+        try:
+            sources = self.rule_source_loader.load_sources(cfg.rules_files)
+            ast_file = self.dsl_parser.parse_many(sources, source_names=[str(p) for p in cfg.rules_files])
+            ruleset: RuleSet = self.rule_compiler.compile(ast_file)
+        except Exception as e:
+            engine_errors.append(
+                EngineError(
+                    type="rules_error",
+                    message="Failed to load/parse/compile rules",
+                    location=None,
+                    details={"error": repr(e)},
+                )
+            )
+            ruleset = RuleSet()
+
+        # 7) Evaluate rules -> violations
+        try:
+            violations = self.rule_evaluator.evaluate(enriched_ir, ruleset)
+        except Exception as e:
+            engine_errors.append(
+                EngineError(
+                    type="runtime_error",
+                    message="Rule evaluation failed",
+                    location=None,
+                    details={"error": repr(e)},
+                )
+            )
+            violations = tuple()
+
+        # 8) Build updated snapshot with violations, compare baseline
+
+        updated_snapshot = self.snapshot_builder.build(
+            enriched_ir,
+            meta=snapshot.meta,
+            violations=violations,
+        )
+
+        baseline_snapshot: Snapshot | None = None
+        if cfg.baseline:
+            if snapshot_store.exists(cfg.baseline):
+                baseline_snapshot = snapshot_store.load(cfg.baseline)
+                diff = self.diff_engine.diff(baseline_snapshot, updated_snapshot)
+                violations = self.baseline_service.mark_status(
+                    violations=violations,
+                    baseline_snapshot=baseline_snapshot,
+                    key_factory=self.key_factory,
+                )
+            else:
+                engine_errors.append(
+                    EngineError(
+                        type="config_error",
+                        message=f"Baseline snapshot not found: {cfg.baseline}",
+                        location=None,
+                        details={"hint": "Create a baseline with `pacta snapshot save --ref <name>`"},
+                    )
+                )
+
+        # 9) Build report
+        report = self.report_builder.build(
+            run=RunInfo(
+                repo_root=str(cfg.repo_root),
+                commit=snapshot.meta.commit,
+                model_file=str(cfg.model_file) if cfg.model_file else None,
+                rules_files=tuple(str(p) for p in cfg.rules_files),
+                baseline_ref=cfg.baseline,
+                mode="changed_only" if cfg.changed_only else "full",
+            ),
+            violations=violations,
+            engine_errors=engine_errors,
+            diff=diff,
+        )
+
+        return CheckResult(snapshot=updated_snapshot, report=report, diff=diff)

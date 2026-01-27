@@ -108,6 +108,26 @@ class FsSnapshotStore:
             refs_updated=tuple(refs_updated),
         )
 
+    def update_object(self, short_hash: str, snapshot: Snapshot) -> None:
+        """
+        Overwrite an existing object file in-place.
+
+        This is used by `pacta check` to write violations back into
+        an existing snapshot without creating a new object.
+        """
+        path = self._object_path(short_hash)
+        if not path.exists():
+            raise FileNotFoundError(f"Snapshot object not found: {short_hash}")
+
+        data = snapshot.to_dict()
+        # Preserve the original hash as the identifier
+        data["_hash"] = short_hash
+
+        path.write_text(
+            json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
     def load_object(self, short_hash: str) -> Snapshot:
         """Load snapshot by short hash."""
         path = self._object_path(short_hash)

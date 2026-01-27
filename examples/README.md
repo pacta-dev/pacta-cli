@@ -22,7 +22,13 @@ To run any example:
 
 ```bash
 cd examples/<example-name>
+
+# One-step (scan = snapshot + check):
 pacta scan . --model architecture.yml --rules rules.pacta.yml
+
+# Or two-step:
+pacta snapshot save . --model architecture.yml
+pacta check . --rules rules.pacta.yml
 ```
 
 ## Creating Your Own
