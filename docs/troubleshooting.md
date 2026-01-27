@@ -115,6 +115,9 @@ Error: Baseline 'baseline' not found
 1. Create a baseline first:
    ```bash
    pacta scan . --model architecture.yml --rules rules.pacta.yml --save-ref baseline
+   # Or using the two-step workflow:
+   pacta snapshot save . --model architecture.yml --ref baseline
+   pacta check . --ref baseline --rules rules.pacta.yml
    ```
 
 2. Check that `.pacta/` directory exists and contains snapshots:

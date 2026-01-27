@@ -61,6 +61,64 @@ Violations are displayed with human-readable explanations:
 - **For dependency violations:** Shows which module imports/calls/uses another, with their respective layers
 - **For node violations:** Shows the element type and where it was found (layer, container, context)
 
+## check
+
+Evaluate architectural rules against an existing snapshot.
+
+This separates the "capture" step (`snapshot save`) from the "verify" step (`check`), allowing you to snapshot your architecture once and check it against different rule sets or at different times.
+
+```bash
+pacta check [PATH] [OPTIONS]
+```
+
+**Arguments:**
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `PATH` | `.` | Repository root |
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--ref REF` | `latest` | Snapshot ref to check |
+| `--model FILE` | `architecture.yml` | Architecture model file |
+| `--rules FILE` | `rules.pacta.yml` | Rules file (repeatable) |
+| `--format {text,json}` | `text` | Output format |
+| `--baseline REF` | - | Compare against baseline snapshot |
+| `--save-ref REF` | - | Also save result under this ref |
+| `-q, --quiet` | - | Summary only |
+| `-v, --verbose` | - | Include all details |
+
+**Examples:**
+
+```bash
+# Check latest snapshot against rules
+pacta check . --rules rules.pacta.yml
+
+# Check a specific snapshot ref
+pacta check . --ref v1 --rules rules.pacta.yml
+
+# Check against baseline (only new violations fail)
+pacta check . --baseline baseline --rules rules.pacta.yml
+
+# JSON output
+pacta check . --rules rules.pacta.yml --format json
+```
+
+**Typical workflow:**
+
+```bash
+# Step 1: Capture architecture
+pacta snapshot save . --model architecture.yml
+
+# Step 2: Evaluate rules against the snapshot
+pacta check . --rules rules.pacta.yml
+
+# Or do both in one step:
+pacta scan . --model architecture.yml --rules rules.pacta.yml
+```
+
 ## snapshot save
 
 Save architecture snapshot without running rules.

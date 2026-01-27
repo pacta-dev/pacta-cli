@@ -122,9 +122,13 @@ rule:
   message: Domain layer must not import from Infrastructure
 ```
 
-Run a scan with rules:
+Run a check against your snapshot:
 
 ```bash
+# Option A: Check the snapshot you already have
+pacta check . --rules rules.pacta.yml
+
+# Option B: Or do snapshot + check in one step
 pacta scan . --model architecture.yml --rules rules.pacta.yml
 ```
 
