@@ -34,9 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     check_p.add_argument("--rules", action="append", default=None, help="Rules file path (repeatable).")
     check_p.add_argument("--model", default=None, help="Architecture model file (architecture.yaml).")
     check_p.add_argument("--baseline", default=None, help="Baseline snapshot ref.")
-    check_p.add_argument(
-        "--save-ref", dest="save_ref", default=None, help="Also save snapshot under this ref."
-    )
+    check_p.add_argument("--save-ref", dest="save_ref", default=None, help="Also save snapshot under this ref.")
     check_verbosity = check_p.add_mutually_exclusive_group()
     check_verbosity.add_argument("-q", "--quiet", action="store_true", help="Minimal output (summary only).")
     check_verbosity.add_argument("-v", "--verbose", action="store_true", help="Verbose output (include all details).")

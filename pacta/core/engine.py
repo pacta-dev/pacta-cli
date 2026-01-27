@@ -472,7 +472,6 @@ class DefaultPactaEngine:
             violations = tuple()
 
         # 8) Build updated snapshot with violations, compare baseline
-        from pacta.snapshot.types import SnapshotMeta
 
         updated_snapshot = self.snapshot_builder.build(
             enriched_ir,
