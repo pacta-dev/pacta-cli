@@ -36,7 +36,7 @@ def create_test_report(repo_root, violations=None, engine_errors=None, **overrid
 
     return Report(
         tool="pacta",
-        version="0.0.4",
+        version="0.0.5",
         run=RunInfo(
             repo_root=str(repo_root),
             commit=None,
@@ -46,7 +46,7 @@ def create_test_report(repo_root, violations=None, engine_errors=None, **overrid
             baseline_ref=overrides.get("baseline_ref"),
             mode=overrides.get("mode", "full"),
             created_at=None,
-            tool_version="0.0.4",
+            tool_version="0.0.5",
             metadata={},
         ),
         summary=summary,

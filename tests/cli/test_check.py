@@ -31,7 +31,7 @@ def _make_report(repo_root: str, violations=None, engine_errors=None) -> Report:
 
     return Report(
         tool="pacta",
-        version="0.0.4",
+        version="0.0.5",
         run=RunInfo(
             repo_root=repo_root,
             commit=None,
@@ -41,7 +41,7 @@ def _make_report(repo_root: str, violations=None, engine_errors=None) -> Report:
             baseline_ref=None,
             mode="full",
             created_at=None,
-            tool_version="0.0.4",
+            tool_version="0.0.5",
             metadata={},
         ),
         summary=Summary(
