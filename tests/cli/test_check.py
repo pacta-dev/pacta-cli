@@ -192,7 +192,9 @@ class TestCheckCommand:
 
         store.update_object.assert_called_once()
         store.save.assert_called_once()
-        assert "extra" in store.save.call_args.kwargs.get("refs", store.save.call_args[1] if len(store.save.call_args) > 1 else [])
+        assert "extra" in store.save.call_args.kwargs.get(
+            "refs", store.save.call_args[1] if len(store.save.call_args) > 1 else []
+        )
 
     def test_check_json_format(self, tmp_path):
         """Test check command with JSON output."""
