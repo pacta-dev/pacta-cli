@@ -20,7 +20,7 @@ pacta scan [PATH] [OPTIONS]
 |--------|---------|-------------|
 | `--model FILE` | `architecture.yml` | Architecture model file |
 | `--rules FILE` | `rules.pacta.yml` | Rules file (repeatable) |
-| `--format {text,json}` | `text` | Output format |
+| `--format {text,json,github}` | `text` | Output format (`github` produces Markdown for PR comments) |
 | `--baseline REF` | - | Compare against baseline snapshot |
 | `--save-ref REF` | - | Save snapshot under this ref |
 | `--mode {full,changed_only}` | `full` | Evaluation mode |
@@ -84,7 +84,7 @@ pacta check [PATH] [OPTIONS]
 | `--ref REF` | `latest` | Snapshot ref to check |
 | `--model FILE` | `architecture.yml` | Architecture model file |
 | `--rules FILE` | `rules.pacta.yml` | Rules file (repeatable) |
-| `--format {text,json}` | `text` | Output format |
+| `--format {text,json,github}` | `text` | Output format (`github` produces Markdown for PR comments) |
 | `--baseline REF` | - | Compare against baseline snapshot |
 | `--save-ref REF` | - | Also save result under this ref |
 | `-q, --quiet` | - | Summary only |

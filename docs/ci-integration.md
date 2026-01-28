@@ -88,6 +88,48 @@ jobs:
 !!! note "Persisting baselines"
     The baseline is stored in `.pacta/snapshots/`. Commit this directory to your repository, or use GitHub Actions cache/artifacts to persist it between runs.
 
+### Pacta GitHub Action (Recommended)
+
+The simplest way to get rich architectural PR comments. Uses `--format github` to generate a descriptive Markdown comment with structural changes, violation details, and architecture trends:
+
+```yaml
+name: Architecture Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: akhundMurad/pacta@main
+        with:
+          model: architecture.yml
+          rules: rules.pacta.yml
+          baseline: baseline
+```
+
+The action will:
+
+- Run `pacta scan` with `--format github` to produce a rich Markdown report
+- Post (or update) a PR comment with structural changes, new/fixed violations, and architecture trends
+- Fail the check if new violations are introduced (configurable via `fail-on-violations: false`)
+
+**Action Inputs:**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `model` | `architecture.yml` | Path to architecture model |
+| `rules` | `rules.pacta.yml` | Path to rules file |
+| `baseline` | *(none)* | Baseline ref for incremental checks |
+| `python-version` | `3.11` | Python version |
+| `fail-on-violations` | `true` | Fail if new violations found |
+| `pacta-version` | `pacta` | Pacta package specifier |
+
 ### JSON Output for PR Comments
 
 Generate JSON output and post results as a PR comment:
