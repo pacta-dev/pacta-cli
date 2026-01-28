@@ -14,7 +14,7 @@ def build_parser() -> argparse.ArgumentParser:
     # scan
     scan_p = sub.add_parser("scan", help="Scan repository and evaluate rules.")
     scan_p.add_argument("path", nargs="?", default=".", help="Repository root (default: .)")
-    scan_p.add_argument("--format", choices=["text", "json"], default="text", help="Output format.")
+    scan_p.add_argument("--format", choices=["text", "json", "github"], default="text", help="Output format.")
     scan_p.add_argument("--rules", action="append", default=None, help="Rules file path (repeatable).")
     scan_p.add_argument("--model", default=None, help="Architecture model file (architecture.yaml).")
     scan_p.add_argument("--baseline", default=None, help="Baseline snapshot ref (e.g. baseline).")
@@ -30,7 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     check_p = sub.add_parser("check", help="Evaluate rules against a snapshot.")
     check_p.add_argument("path", nargs="?", default=".", help="Repository root (default: .)")
     check_p.add_argument("--ref", default="latest", help="Snapshot ref to check (default: latest).")
-    check_p.add_argument("--format", choices=["text", "json"], default="text", help="Output format.")
+    check_p.add_argument("--format", choices=["text", "json", "github"], default="text", help="Output format.")
     check_p.add_argument("--rules", action="append", default=None, help="Rules file path (repeatable).")
     check_p.add_argument("--model", default=None, help="Architecture model file (architecture.yaml).")
     check_p.add_argument("--baseline", default=None, help="Baseline snapshot ref.")

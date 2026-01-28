@@ -1,9 +1,11 @@
 from pathlib import Path
 
 from pacta.cli._io import default_model_file, default_rules_files, ensure_repo_root
+from pacta.cli._trends import attach_trends
 from pacta.cli.exitcodes import exit_code_from_report_dict
 from pacta.core.config import EngineConfig
 from pacta.core.engine import DefaultPactaEngine
+from pacta.reporting.renderers.github import GitHubReportRenderer
 from pacta.reporting.renderers.json import JsonReportRenderer
 from pacta.reporting.renderers.text import TextReportRenderer
 from pacta.snapshot.store import FsSnapshotStore
@@ -70,7 +72,10 @@ def run(
         store.save(result.snapshot, refs=[save_ref])
 
     # Render report
-    if fmt == "json":
+    if fmt == "github":
+        report = attach_trends(result.report, repo_root=repo_root)
+        out = GitHubReportRenderer().render(report)
+    elif fmt == "json":
         out = JsonReportRenderer().render(result.report)
     else:
         out = TextReportRenderer(verbosity=verbosity).render(result.report)  # type: ignore[arg-type]

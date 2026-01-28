@@ -1,6 +1,8 @@
 from pacta.cli._engine_adapter import run_engine_scan
 from pacta.cli._io import default_model_file, default_rules_files, ensure_repo_root
+from pacta.cli._trends import attach_trends
 from pacta.cli.exitcodes import exit_code_from_report_dict
+from pacta.reporting.renderers.github import GitHubReportRenderer
 from pacta.reporting.renderers.json import JsonReportRenderer
 from pacta.reporting.renderers.text import TextReportRenderer
 
@@ -32,7 +34,10 @@ def run(
         tool_version=tool_version,
     )
 
-    if fmt == "json":
+    if fmt == "github":
+        report = attach_trends(report, repo_root=repo_root)
+        out = GitHubReportRenderer().render(report)
+    elif fmt == "json":
         out = JsonReportRenderer().render(report)
     else:
         out = TextReportRenderer(verbosity=verbosity).render(report)  # type: ignore[arg-type]
