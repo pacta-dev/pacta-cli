@@ -5,6 +5,10 @@ branding:
   color: 'blue'
 
 inputs:
+  target_dir:
+    description: 'Repository root (default: .)'
+    required: false
+    default: '.'
   model:
     description: 'Path to architecture.yml'
     required: false
@@ -56,10 +60,10 @@ runs:
         fi
 
         # Generate GitHub Markdown comment
-        pacta scan . $ARGS --format github > "$RUNNER_TEMP/pacta-comment.md" || true
+        pacta scan ${{ inputs.target_dir }} $ARGS --format github > "$RUNNER_TEMP/pacta-comment.md" || true
 
         # Generate JSON for machine-readable results
-        pacta scan . $ARGS --format json > "$RUNNER_TEMP/pacta-results.json" || true
+        pacta scan ${{ inputs.target_dir }} $ARGS --format json > "$RUNNER_TEMP/pacta-results.json" || true
 
         # Extract new violation count
         NEW=$(jq '.summary.by_status.new // 0' "$RUNNER_TEMP/pacta-results.json" 2>/dev/null || echo 0)
