@@ -1,3 +1,5 @@
+import json
+import re
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
@@ -189,11 +191,20 @@ class DefaultReportBuilder:
         if isinstance(diff, DiffSummary):
             return diff
 
+        # Extract detail names from SnapshotDiff.details if available
+        details = get_field(diff, "details", default={}) or {}
+        nodes_detail = details.get("nodes", {}) if isinstance(details, dict) else {}
+        edges_detail = details.get("edges", {}) if isinstance(details, dict) else {}
+
         return DiffSummary(
             nodes_added=int(get_field(diff, "nodes_added", default=get_field(diff, "nodesAdded", default=0))),
             nodes_removed=int(get_field(diff, "nodes_removed", default=get_field(diff, "nodesRemoved", default=0))),
             edges_added=int(get_field(diff, "edges_added", default=get_field(diff, "edgesAdded", default=0))),
             edges_removed=int(get_field(diff, "edges_removed", default=get_field(diff, "edgesRemoved", default=0))),
+            added_node_names=tuple(_humanize_node(n) for n in nodes_detail.get("added", ())),
+            removed_node_names=tuple(_humanize_node(n) for n in nodes_detail.get("removed", ())),
+            added_edge_names=tuple(_humanize_edge(e) for e in edges_detail.get("added", ())),
+            removed_edge_names=tuple(_humanize_edge(e) for e in edges_detail.get("removed", ())),
         )
 
     def _build_summary(self, violations: Sequence[Violation], engine_errors: Sequence[EngineError]) -> Summary:
@@ -213,3 +224,43 @@ class DefaultReportBuilder:
             by_rule=dict(sorted(by_rule.items(), key=lambda kv: kv[0])),
             engine_errors=len(engine_errors),
         )
+
+
+# --- Diff key humanization ---
+
+_NODE_ID_RE = re.compile(r"^[a-z]+://[^:]+::(.+)$")
+
+
+def _humanize_node(key: str) -> str:
+    """Turn 'python://code-root::src.domain.user' into 'src.domain.user'."""
+    m = _NODE_ID_RE.match(key)
+    return m.group(1) if m else key
+
+
+def _humanize_edge(key: str) -> str:
+    """Turn an edge key into 'src.fqname → dst.fqname'.
+
+    Edge keys come in two forms:
+    1) 'from_id->to_id:kind' (structured key)
+    2) JSON blob from dumps_deterministic(e.to_dict())
+    """
+    # Form 1: structured key
+    if "->" in key and not key.startswith("{"):
+        arrow_idx = key.index("->")
+        from_part = key[:arrow_idx]
+        rest = key[arrow_idx + 2 :]
+        to_part = rest.split(":")[0] if ":" in rest else rest
+        return f"{_humanize_node(from_part)} → {_humanize_node(to_part)}"
+
+    # Form 2: JSON blob — extract src/dst fqnames
+    try:
+        data = json.loads(key)
+        src = data.get("src", {})
+        dst = data.get("dst", {})
+        src_name = src.get("fqname", str(src))
+        dst_name = dst.get("fqname", str(dst))
+        return f"{src_name} → {dst_name}"
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        pass
+
+    return key

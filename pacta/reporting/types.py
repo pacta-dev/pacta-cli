@@ -324,12 +324,21 @@ class DiffSummary:
     edges_added: int
     edges_removed: int
 
+    added_node_names: tuple[str, ...] = ()
+    removed_node_names: tuple[str, ...] = ()
+    added_edge_names: tuple[str, ...] = ()
+    removed_edge_names: tuple[str, ...] = ()
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "nodes_added": self.nodes_added,
             "nodes_removed": self.nodes_removed,
             "edges_added": self.edges_added,
             "edges_removed": self.edges_removed,
+            "added_node_names": list(self.added_node_names),
+            "removed_node_names": list(self.removed_node_names),
+            "added_edge_names": list(self.added_edge_names),
+            "removed_edge_names": list(self.removed_edge_names),
         }
 
     @staticmethod
@@ -339,6 +348,77 @@ class DiffSummary:
             nodes_removed=data["nodes_removed"],
             edges_added=data["edges_added"],
             edges_removed=data["edges_removed"],
+            added_node_names=tuple(data.get("added_node_names", ())),
+            removed_node_names=tuple(data.get("removed_node_names", ())),
+            added_edge_names=tuple(data.get("added_edge_names", ())),
+            removed_edge_names=tuple(data.get("removed_edge_names", ())),
+        )
+
+
+# Architecture trends
+
+
+@dataclass(frozen=True, slots=True)
+class TrendPoint:
+    """
+    A single data point in the architecture trend timeline.
+    """
+
+    label: str
+    violations: float
+    nodes: float
+    edges: float
+    density: float
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "label": self.label,
+            "violations": self.violations,
+            "nodes": self.nodes,
+            "edges": self.edges,
+            "density": self.density,
+        }
+
+    @staticmethod
+    def from_dict(data: Mapping[str, Any]) -> "TrendPoint":
+        return TrendPoint(
+            label=data["label"],
+            violations=float(data["violations"]),
+            nodes=float(data["nodes"]),
+            edges=float(data["edges"]),
+            density=float(data["density"]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class TrendSummary:
+    """
+    Architecture metric trends over recent snapshots.
+    """
+
+    points: tuple[TrendPoint, ...]
+    violation_change: float
+    node_change: float
+    edge_change: float
+    density_change: float
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "points": [p.to_dict() for p in self.points],
+            "violation_change": self.violation_change,
+            "node_change": self.node_change,
+            "edge_change": self.edge_change,
+            "density_change": self.density_change,
+        }
+
+    @staticmethod
+    def from_dict(data: Mapping[str, Any]) -> "TrendSummary":
+        return TrendSummary(
+            points=tuple(TrendPoint.from_dict(p) for p in data.get("points", ())),
+            violation_change=float(data["violation_change"]),
+            node_change=float(data["node_change"]),
+            edge_change=float(data["edge_change"]),
+            density_change=float(data["density_change"]),
         )
 
 
@@ -361,6 +441,7 @@ class Report:
     engine_errors: tuple[EngineError, ...] = ()
 
     diff: DiffSummary | None = None
+    trends: TrendSummary | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -371,11 +452,13 @@ class Report:
             "violations": [v.to_dict() for v in self.violations],
             "engine_errors": [e.to_dict() for e in self.engine_errors],
             "diff": None if self.diff is None else self.diff.to_dict(),
+            "trends": None if self.trends is None else self.trends.to_dict(),
         }
 
     @staticmethod
     def from_dict(data: Mapping[str, Any]) -> "Report":
         diff = data.get("diff")
+        trends = data.get("trends")
 
         return Report(
             tool=data["tool"],
@@ -385,4 +468,5 @@ class Report:
             violations=tuple(Violation.from_dict(v) for v in data.get("violations", ())),
             engine_errors=tuple(EngineError.from_dict(e) for e in data.get("engine_errors", ())),
             diff=None if diff is None else DiffSummary.from_dict(diff),
+            trends=None if trends is None else TrendSummary.from_dict(trends),
         )
