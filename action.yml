@@ -26,7 +26,7 @@ inputs:
     required: false
     default: 'true'
   pacta-version:
-    description: 'Pacta version to install (default: latest)'
+    description: 'Pacta version to install (PyPI spec, default: pacta)'
     required: false
     default: 'pacta'
 
@@ -39,7 +39,12 @@ runs:
 
     - name: Install Pacta
       shell: bash
-      run: pip install ${{ inputs.pacta-version }}
+      run: |
+        if [ "${{ inputs.pacta-version }}" = "local" ]; then
+          pip install .
+        else
+          pip install "${{ inputs.pacta-version }}"
+        fi
 
     - name: Run Architecture Check
       id: pacta

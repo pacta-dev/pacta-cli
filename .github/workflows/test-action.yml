@@ -1,0 +1,28 @@
+name: Test Pacta Composite Action
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check jq
+        run: jq --version
+
+      - name: Run action (default inputs)
+        uses: ./
+        with:
+          model: architecture.yml
+          rules: rules.pacta.yml
+          fail-on-violations: "false"
+          pacta-version: "local"
