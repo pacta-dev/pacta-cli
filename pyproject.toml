@@ -28,10 +28,10 @@ dependencies = ["pyyaml>=6.0,<7.0"]
 viz = ["matplotlib>=3.8"]
 
 [project.urls]
-Homepage = "https://github.com/akhundMurad/pacta"
-Documentation = "https://akhundmurad.github.io/pacta/"
-Repository = "https://github.com/akhundMurad/pacta"
-Issues = "https://github.com/akhundMurad/pacta/issues"
+Homepage = "https://github.com/pacta-dev/pacta-cli"
+Documentation = "https://pacta-dev.github.io/pacta-cli/"
+Repository = "https://github.com/pacta-dev/pacta-cli"
+Issues = "https://github.com/pacta-dev/pacta-cli/issues"
 
 [dependency-groups]
 dev = [

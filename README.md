@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="https://pypi.org/project/pacta/">PyPI</a> •
-  <a href="https://akhundmurad.github.io/pacta/">Docs</a> •
-  <a href="https://github.com/akhundMurad/pacta/issues">Issues</a>
+  <a href="https://pacta-dev.github.io/pacta-cli/">Docs</a> •
+  <a href="https://github.com/pacta-dev/pacta-cli/issues">Issues</a>
 </p>
 
 <p align="center">
@@ -63,13 +63,13 @@ Codebases rot. Architecture degrades through small changes no one tracks. Pacta 
 | `git diff` | `pacta diff` — compare two snapshots |
 | branch protection | `rules.pacta.yml` — governance that prevents drift |
 
-See the [Getting Started](https://akhundmurad.github.io/pacta/getting-started/) guide for a full walkthrough.
+See the [Getting Started](https://pacta-dev.github.io/pacta-cli/getting-started/) guide for a full walkthrough.
 
 ## Docs
 
-- [CLI Reference](https://akhundmurad.github.io/pacta/cli/)
-- [Architecture Model](https://akhundmurad.github.io/pacta/architecture/)
-- [Rules DSL](https://akhundmurad.github.io/pacta/rules/)
+- [CLI Reference](https://pacta-dev.github.io/pacta-cli/cli/)
+- [Architecture Model](https://pacta-dev.github.io/pacta-cli/architecture/)
+- [Rules DSL](https://pacta-dev.github.io/pacta-cli/rules/)
 
 ## Roadmap (short)
 
@@ -85,4 +85,4 @@ See the [Getting Started](https://akhundmurad.github.io/pacta/getting-started/) 
 
 ## License
 
-Apache-2.0. See [LICENSE](https://github.com/akhundMurad/pacta/blob/main/LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/pacta-dev/pacta-cli/blob/main/LICENSE).

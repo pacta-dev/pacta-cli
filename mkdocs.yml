@@ -1,9 +1,9 @@
 site_name: Pacta
 site_description: Architecture Governance & Architecture-as-Code
-site_url: https://akhundmurad.github.io/pacta/
+site_url: https://pacta-dev.github.io/pacta-cli/
 
-repo_name: akhundMurad/pacta
-repo_url: https://github.com/akhundMurad/pacta
+repo_name: pacta-dev/pacta-cli
+repo_url: https://github.com/pacta-dev/pacta-cli
 
 theme:
   name: material

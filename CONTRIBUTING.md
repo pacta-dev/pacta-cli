@@ -32,7 +32,7 @@ This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
 ```bash
 # Clone the repository
-git clone https://github.com/akhundMurad/pacta.git
+git clone https://github.com/pacta-dev/pacta-cli.git
 cd pacta
 
 # Install dependencies with dev tools

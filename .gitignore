@@ -197,3 +197,4 @@ pyrightconfig.json
 .pacta/
 .vscode/
 uv.toml
+.DS_Store

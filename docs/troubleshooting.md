@@ -312,5 +312,5 @@ Typical performance:
 If you're stuck:
 
 1. Check the [CLI Reference](cli.md) for command options
-2. Look at the [example project](https://github.com/akhundMurad/pacta/tree/main/examples/simple-layered-app)
-3. [Open an issue](https://github.com/akhundMurad/pacta/issues) on GitHub
+2. Look at the [example project](https://github.com/pacta-dev/pacta-cli/tree/main/examples/simple-layered-app)
+3. [Open an issue](https://github.com/pacta-dev/pacta-cli/issues) on GitHub

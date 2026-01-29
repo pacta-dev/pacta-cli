@@ -23,5 +23,5 @@
 
 - **cli:** Reformat assertion for save refs call args
 
-[0.0.5]: https://github.com/akhundMurad/pacta/compare/v0.0.4...v0.0.5
+[0.0.5]: https://github.com/pacta-dev/pacta-cli/compare/v0.0.4...v0.0.5
 
