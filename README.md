@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/logo-ascii.png" alt="Pacta" width="400">
+  <img src="https://raw.githubusercontent.com/pacta-dev/pacta-cli/main/assets/logo-ascii.png" alt="Pacta" width="400">
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 <p align="center">
   <a href="https://pypi.org/project/pacta/"><img src="https://img.shields.io/pypi/v/pacta?color=green" alt="PyPI - Version"></a>
   <a href="https://pypi.org/project/pacta/"><img src="https://img.shields.io/pypi/pyversions/pacta?color=green" alt="PyPI - Python Version"></a>
-  <img src="https://img.shields.io/github/license/akhundMurad/pacta" alt="GitHub License">
+  <img src="https://img.shields.io/github/license/pacta-dev/pacta-cli" alt="GitHub License">
 </p>
 
 ---
@@ -29,7 +29,7 @@ pip install pacta
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/demo.gif" alt="Pacta Demo" width="700">
+  <img src="https://raw.githubusercontent.com/pacta-dev/pacta-cli/main/assets/demo.gif" alt="Pacta Demo" width="700">
 </p>
 
 Supported languages:

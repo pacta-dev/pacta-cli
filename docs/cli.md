@@ -328,7 +328,7 @@ pip install pacta[viz]
 
 This adds matplotlib support for PNG, SVG, and PDF export.
 
-![Trends Example](https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/trends-example.png)
+![Trends Example](https://raw.githubusercontent.com/pacta-dev/pacta-cli/main/assets/trends-example.png)
 
 **Example output:**
 

@@ -106,7 +106,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: akhundMurad/pacta@main
+      - uses: pacta-dev/pacta-cli@main
         with:
           model: architecture.yml
           rules: rules.pacta.yml
@@ -121,7 +121,7 @@ The action will:
 
 **Example comment:**
 
-![Github Action output example](https://raw.githubusercontent.com/akhundMurad/pacta/main/assets/github-action-example.png)
+![Github Action output example](https://raw.githubusercontent.com/pacta-dev/pacta-cli/main/assets/github-action-example.png)
 
 **Action Inputs:**
 
