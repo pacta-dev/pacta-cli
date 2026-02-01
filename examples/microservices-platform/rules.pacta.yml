@@ -1,0 +1,33 @@
+rules:
+  - id: no-cross-service-domain-deps
+    name: Domain must not depend on other services
+    severity: error
+    target: dependency
+    action: forbid
+    when:
+      all:
+        - from.service != to.service
+        - from.layer == domain
+    message: Domain code must not depend on another service
+
+  - id: library-no-service-deps
+    name: Libraries must be independent of services
+    severity: error
+    target: dependency
+    action: forbid
+    when:
+      all:
+        - from.kind == library
+        - to.kind == service
+    message: Library code must not import service code
+
+  - id: no-infra-to-api
+    name: Infrastructure must not depend on API layer
+    severity: error
+    target: dependency
+    action: forbid
+    when:
+      all:
+        - from.layer == infra
+        - to.layer == api
+    message: Infrastructure layer must not depend on the API layer
