@@ -245,3 +245,57 @@ def test_all_of_any_of_not_helpers():
 
     assert not_(p_true)("x") is False
     assert not_(p_false)("x") is True
+
+
+# ----------------------------
+# v2: New node fields (service, kind, symbol_kind)
+# ----------------------------
+
+
+def test_get_node_field_v2_service_and_kind():
+    n = IRNode(
+        id=cid("billing.api.routes"),
+        kind=SymbolKind.MODULE,
+        service="billing-service",
+        container_kind="service",
+    )
+    assert get_node_field(n, "service") == "billing-service"
+    assert get_node_field(n, "node.service") == "billing-service"
+    assert get_node_field(n, "kind") == "service"
+    assert get_node_field(n, "node.kind") == "service"
+    assert get_node_field(n, "symbol_kind") == SymbolKind.MODULE.value
+
+
+def test_get_node_field_v2_none_when_not_enriched():
+    n = IRNode(id=cid("x"), kind=SymbolKind.MODULE)
+    assert get_node_field(n, "service") is None
+    assert get_node_field(n, "kind") is None
+
+
+# ----------------------------
+# v2: New edge fields (service, kind)
+# ----------------------------
+
+
+def test_get_edge_field_v2_service_and_kind():
+    e = IREdge(
+        src=cid("a"),
+        dst=cid("b"),
+        dep_type=DepType.IMPORT,
+        src_service="billing-service",
+        dst_service="shared-utils",
+        src_container_kind="service",
+        dst_container_kind="library",
+    )
+    assert get_edge_field(e, "from.service") == "billing-service"
+    assert get_edge_field(e, "to.service") == "shared-utils"
+    assert get_edge_field(e, "from.kind") == "service"
+    assert get_edge_field(e, "to.kind") == "library"
+
+
+def test_get_edge_field_v2_none_when_not_enriched():
+    e = IREdge(src=cid("a"), dst=cid("b"), dep_type=DepType.IMPORT)
+    assert get_edge_field(e, "from.service") is None
+    assert get_edge_field(e, "to.service") is None
+    assert get_edge_field(e, "from.kind") is None
+    assert get_edge_field(e, "to.kind") is None

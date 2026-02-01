@@ -142,7 +142,9 @@ class DefaultArchitectureModelValidator:
                     details={"container_id": cid},
                 )
             )
-        if c.id != cid:
+        # For nested containers, cid is dot-qualified (e.g. "svc.mod") but c.id is the local id ("mod")
+        expected_local_id = cid.rsplit(".", 1)[-1]
+        if c.id != expected_local_id:
             errors.append(
                 EngineError(
                     type="config_error",

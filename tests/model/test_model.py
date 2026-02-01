@@ -9,6 +9,7 @@ from pacta.model.types import (
     ArchitectureModel,
     CodeMapping,
     Container,
+    ContainerKind,
     Context,
     Layer,
     Relation,
@@ -387,3 +388,417 @@ def test_resolver_deterministic_ordering_with_multiple_containers():
     # Sorted by container id
     assert list(resolved.path_roots.keys()) == ["a", "z"]
     assert list(resolved.container_to_context.keys()) == ["a", "z"]
+
+
+# ----------------------------
+# v2 Schema: Version detection
+# ----------------------------
+
+
+def test_loader_rejects_unsupported_version(tmp_path: Path):
+    f = write_json(tmp_path / "architecture.json", {"version": 99, "containers": {}})
+    with pytest.raises(ModelLoadError) as ei:
+        load_model(f)
+    assert ei.value.code == "unsupported_version"
+
+
+def test_loader_missing_version_defaults_to_v1(tmp_path: Path):
+    f = write_json(tmp_path / "architecture.json", {"containers": {}})
+    m = load_model(f)
+    assert m.version == 1
+
+
+def test_loader_explicit_v1(tmp_path: Path):
+    f = write_json(tmp_path / "architecture.json", {"version": 1, "containers": {}})
+    m = load_model(f)
+    assert m.version == 1
+
+
+def test_loader_explicit_v2(tmp_path: Path):
+    f = write_json(
+        tmp_path / "architecture.json",
+        {
+            "version": 2,
+            "containers": {
+                "svc": {
+                    "kind": "service",
+                    "code": {"roots": ["src"], "layers": {}},
+                }
+            },
+        },
+    )
+    m = load_model(f)
+    assert m.version == 2
+
+
+# ----------------------------
+# v2 Schema: Loader
+# ----------------------------
+
+
+def test_loader_v2_parses_kind_and_contains(tmp_path: Path):
+    f = write_json(
+        tmp_path / "architecture.json",
+        {
+            "version": 2,
+            "containers": {
+                "billing-service": {
+                    "kind": "service",
+                    "name": "Billing Service",
+                    "context": "billing",
+                    "code": {
+                        "roots": ["services/billing"],
+                        "layers": {
+                            "domain": ["services/billing/domain/**"],
+                        },
+                    },
+                    "contains": {
+                        "invoice-module": {
+                            "kind": "module",
+                            "name": "Invoice Module",
+                            "code": {
+                                "roots": ["services/billing/domain/invoice"],
+                                "layers": {
+                                    "model": ["services/billing/domain/invoice/model/**"],
+                                },
+                            },
+                        },
+                    },
+                },
+                "shared-utils": {
+                    "kind": "library",
+                    "code": {"roots": ["libs/shared"], "layers": {}},
+                },
+            },
+        },
+    )
+    m = load_model(f)
+
+    assert m.version == 2
+    assert "billing-service" in m.containers
+    c = m.containers["billing-service"]
+    assert c.kind == ContainerKind.SERVICE
+    assert c.name == "Billing Service"
+    assert "invoice-module" in c.children
+    child = c.children["invoice-module"]
+    assert child.kind == ContainerKind.MODULE
+    assert child.code is not None
+    assert child.code.roots == ("services/billing/domain/invoice",)
+
+    assert m.containers["shared-utils"].kind == ContainerKind.LIBRARY
+
+
+def test_loader_v2_requires_kind(tmp_path: Path):
+    f = write_json(
+        tmp_path / "architecture.json",
+        {
+            "version": 2,
+            "containers": {"svc": {"code": {"roots": ["src"], "layers": {}}}},
+        },
+    )
+    with pytest.raises(ModelLoadError) as ei:
+        load_model(f)
+    assert ei.value.code == "missing_container_kind"
+
+
+def test_loader_v2_rejects_invalid_kind(tmp_path: Path):
+    f = write_json(
+        tmp_path / "architecture.json",
+        {
+            "version": 2,
+            "containers": {"svc": {"kind": "banana", "code": {"roots": ["src"], "layers": {}}}},
+        },
+    )
+    with pytest.raises(ModelLoadError) as ei:
+        load_model(f)
+    assert ei.value.code == "invalid_container_kind"
+
+
+def test_loader_v2_interactions_alias(tmp_path: Path):
+    f = write_json(
+        tmp_path / "architecture.json",
+        {
+            "version": 2,
+            "containers": {
+                "a": {"kind": "service"},
+                "b": {"kind": "service"},
+            },
+            "interactions": [
+                {"from": "a", "to": "b", "protocol": "http"},
+            ],
+        },
+    )
+    m = load_model(f)
+    assert len(m.relations) == 1
+    assert m.relations[0].from_container == "a"
+    assert m.relations[0].to_container == "b"
+
+
+def test_loader_v2_relations_key_takes_precedence(tmp_path: Path):
+    f = write_json(
+        tmp_path / "architecture.json",
+        {
+            "version": 2,
+            "containers": {
+                "a": {"kind": "service"},
+                "b": {"kind": "service"},
+            },
+            "relations": [
+                {"from": "a", "to": "b"},
+            ],
+            "interactions": [
+                {"from": "b", "to": "a"},
+            ],
+        },
+    )
+    m = load_model(f)
+    # relations key takes precedence
+    assert len(m.relations) == 1
+    assert m.relations[0].from_container == "a"
+
+
+# ----------------------------
+# v2 Schema: containers_flat
+# ----------------------------
+
+
+def test_containers_flat_includes_nested():
+    m = ArchitectureModel(
+        version=2,
+        contexts={},
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                children={
+                    "mod": Container(id="mod", kind=ContainerKind.MODULE),
+                },
+            ),
+        },
+        relations=(),
+        metadata={},
+    )
+    flat = m.containers_flat
+    assert "svc" in flat
+    assert "svc.mod" in flat
+    assert flat["svc.mod"].kind == ContainerKind.MODULE
+
+
+def test_containers_flat_deep_nesting():
+    m = ArchitectureModel(
+        version=2,
+        contexts={},
+        containers={
+            "a": Container(
+                id="a",
+                kind=ContainerKind.SERVICE,
+                children={
+                    "b": Container(
+                        id="b",
+                        kind=ContainerKind.MODULE,
+                        children={
+                            "c": Container(id="c", kind=ContainerKind.MODULE),
+                        },
+                    ),
+                },
+            ),
+        },
+        relations=(),
+        metadata={},
+    )
+    flat = m.containers_flat
+    assert set(flat.keys()) == {"a", "a.b", "a.b.c"}
+
+
+def test_get_container_finds_nested():
+    m = ArchitectureModel(
+        version=2,
+        contexts={},
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                children={
+                    "mod": Container(id="mod", kind=ContainerKind.MODULE),
+                },
+            ),
+        },
+        relations=(),
+        metadata={},
+    )
+    assert m.get_container("svc.mod") is not None
+    assert m.get_container("svc.mod").kind == ContainerKind.MODULE
+    assert m.get_container("nonexistent") is None
+
+
+# ----------------------------
+# v2 Schema: Resolver
+# ----------------------------
+
+
+def test_resolver_v2_sets_parent_and_inherits_context():
+    m = ArchitectureModel(
+        version=2,
+        contexts={"billing": Context(id="billing")},
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                context="billing",
+                code=CodeMapping(roots=("services/billing",), layers={}),
+                children={
+                    "mod": Container(
+                        id="mod",
+                        kind=ContainerKind.MODULE,
+                        code=CodeMapping(roots=("services/billing/mod",), layers={}),
+                    ),
+                },
+            ),
+        },
+        relations=(),
+        metadata={},
+    )
+    resolved = DefaultModelResolver().resolve(m)
+
+    # Child should inherit parent's context
+    flat = resolved.containers_flat
+    assert flat["svc"].parent is None
+    assert flat["svc"].context == "billing"
+    assert flat["svc.mod"].parent == "svc"
+    assert flat["svc.mod"].context == "billing"
+
+    # Lookups should include nested containers
+    assert "svc.mod" in resolved.path_roots
+    assert resolved.container_to_context["svc.mod"] == "billing"
+
+
+def test_resolver_v2_child_overrides_context():
+    m = ArchitectureModel(
+        version=2,
+        contexts={
+            "billing": Context(id="billing"),
+            "invoicing": Context(id="invoicing"),
+        },
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                context="billing",
+                children={
+                    "mod": Container(
+                        id="mod",
+                        kind=ContainerKind.MODULE,
+                        context="invoicing",
+                    ),
+                },
+            ),
+        },
+        relations=(),
+        metadata={},
+    )
+    resolved = DefaultModelResolver().resolve(m)
+    flat = resolved.containers_flat
+    assert flat["svc"].context == "billing"
+    assert flat["svc.mod"].context == "invoicing"
+
+
+# ----------------------------
+# v2 Schema: Validator
+# ----------------------------
+
+
+def test_validator_v2_valid_model_no_errors():
+    m = ArchitectureModel(
+        version=2,
+        contexts={"billing": Context(id="billing")},
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                context="billing",
+                code=CodeMapping(
+                    roots=("services/billing",),
+                    layers={"domain": Layer(id="domain", patterns=("services/billing/domain/**",))},
+                ),
+                children={
+                    "mod": Container(
+                        id="mod",
+                        kind=ContainerKind.MODULE,
+                        code=CodeMapping(
+                            roots=("services/billing/mod",),
+                            layers={"model": Layer(id="model", patterns=("services/billing/mod/model/**",))},
+                        ),
+                    ),
+                },
+            ),
+        },
+        relations=(Relation(from_container="svc", to_container="svc.mod"),),
+        metadata={},
+    )
+    resolved = DefaultModelResolver().resolve(m)
+    errs = DefaultArchitectureModelValidator().validate(resolved)
+    assert errs == []
+
+
+def test_validator_v2_child_root_not_under_parent():
+    m = ArchitectureModel(
+        version=2,
+        contexts={},
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                code=CodeMapping(roots=("services/billing",), layers={}),
+                children={
+                    "mod": Container(
+                        id="mod",
+                        kind=ContainerKind.MODULE,
+                        code=CodeMapping(roots=("somewhere/else",), layers={}),
+                    ),
+                },
+            ),
+        },
+        relations=(),
+        metadata={},
+    )
+    resolved = DefaultModelResolver().resolve(m)
+    errs = DefaultArchitectureModelValidator().validate(resolved)
+    assert any("not under parent" in e.message.lower() for e in errs)
+
+
+def test_validator_v2_relation_references_dot_qualified_id():
+    m = ArchitectureModel(
+        version=2,
+        contexts={},
+        containers={
+            "svc": Container(
+                id="svc",
+                kind=ContainerKind.SERVICE,
+                children={
+                    "mod": Container(id="mod", kind=ContainerKind.MODULE),
+                },
+            ),
+        },
+        relations=(Relation(from_container="svc", to_container="svc.mod"),),
+        metadata={},
+    )
+    resolved = DefaultModelResolver().resolve(m)
+    errs = DefaultArchitectureModelValidator().validate(resolved)
+    assert errs == []
+
+
+def test_validator_v2_relation_unknown_ref_shows_available():
+    m = ArchitectureModel(
+        version=2,
+        contexts={},
+        containers={
+            "svc": Container(id="svc", kind=ContainerKind.SERVICE),
+        },
+        relations=(Relation(from_container="svc", to_container="nonexistent"),),
+        metadata={},
+    )
+    resolved = DefaultModelResolver().resolve(m)
+    errs = DefaultArchitectureModelValidator().validate(resolved)
+    assert len(errs) == 1
+    assert "nonexistent" in errs[0].message
+    assert "svc" in errs[0].message
