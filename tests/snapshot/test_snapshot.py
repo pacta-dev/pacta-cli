@@ -283,21 +283,6 @@ def test_store_refs_and_objects(tmp_path: Path):
     assert loaded2.schema_version == snap.schema_version
 
 
-def test_store_resolve_path_explicit_relative_json(tmp_path: Path):
-    from pacta.snapshot.store import FsSnapshotStore
-
-    store = FsSnapshotStore(repo_root=str(tmp_path))
-    assert store.resolve_path("snapshots/x.json") == tmp_path / "snapshots/x.json"
-
-
-def test_store_resolve_path_absolute_json(tmp_path: Path):
-    from pacta.snapshot.store import FsSnapshotStore
-
-    store = FsSnapshotStore(repo_root=str(tmp_path))
-    abs_path = tmp_path / "abs.json"
-    assert store.resolve_path(str(abs_path)) == abs_path
-
-
 def test_store_save_creates_dirs_and_is_deterministic(tmp_path: Path, meta):
     from pacta.snapshot.builder import DefaultSnapshotBuilder
     from pacta.snapshot.store import FsSnapshotStore

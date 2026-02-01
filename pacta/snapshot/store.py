@@ -253,23 +253,3 @@ class FsSnapshotStore:
             return True
         except ValueError:
             return False
-
-    def resolve_path(self, ref: SnapshotRef) -> Path:
-        """
-        DEPRECATED: For backward compatibility only.
-
-        New code should use load() and save() directly.
-        """
-        # If it's a ref, resolve to object path
-        resolved = self.resolve_ref(ref)
-        if resolved:
-            return self._object_path(resolved)
-        # If it looks like a hash, return object path
-        if self._looks_like_hash(ref):
-            return self._object_path(ref)
-        # Legacy behavior: treat as direct path
-        p = Path(ref)
-        if p.suffix == ".json" or "/" in ref or "\\" in ref:
-            return p if p.is_absolute() else (self._repo_root / p)
-        # Default: treat as ref that doesn't exist yet
-        return self._object_path(ref)

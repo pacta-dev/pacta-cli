@@ -391,12 +391,6 @@ class PythonAnalyzer:
 
         return None
 
-    def _package_of(self, src_module: str) -> str:
-        if not src_module:
-            return ""
-        parts = src_module.split(".")
-        return ".".join(parts[:-1]) if len(parts) > 1 else ""
-
     def _resolve_relative_base(self, src_module: str, level: int, module: str) -> str:
         """
         Resolve relative import base.
