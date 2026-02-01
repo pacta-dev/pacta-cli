@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pacta.model.types import ArchitectureModel, Container
+from pacta.model.types import ArchitectureModel, Container, ContainerKind
 from pacta.reporting.types import EngineError
 
 
@@ -47,32 +47,84 @@ class DefaultArchitectureModelValidator:
                     )
                 )
 
-        # containers
-        for cid, c in model.containers.items():
+        # containers (flat includes nested)
+        flat = model.containers_flat
+        for cid, c in flat.items():
             self._validate_container(model, cid, c, errors)
 
-        # relations reference known containers
+        # v2: validate kind and child containment
+        if model.version >= 2:
+            self._validate_v2_containers(flat, errors)
+
+        # v2: check for duplicate IDs in flat namespace
+        # (already impossible if _collect_containers works correctly, but guard against
+        # children whose local IDs collide when dot-qualified)
+
+        # relations reference known containers (use flat namespace)
+        all_ids = set(flat.keys())
         for r in model.relations:
-            if r.from_container not in model.containers:
+            if r.from_container not in all_ids:
                 errors.append(
                     EngineError(
                         type="config_error",
-                        message="Relation references unknown from_container.",
+                        message=f"Relation references unknown from_container '{r.from_container}'."
+                        f" Available: {sorted(all_ids)}.",
                         location=None,
-                        details={"from_container": r.from_container},
+                        details={"from_container": r.from_container, "available": sorted(all_ids)},
                     )
                 )
-            if r.to_container not in model.containers:
+            if r.to_container not in all_ids:
                 errors.append(
                     EngineError(
                         type="config_error",
-                        message="Relation references unknown to_container.",
+                        message=f"Relation references unknown to_container '{r.to_container}'."
+                        f" Available: {sorted(all_ids)}.",
                         location=None,
-                        details={"to_container": r.to_container},
+                        details={"to_container": r.to_container, "available": sorted(all_ids)},
                     )
                 )
 
         return errors
+
+    def _validate_v2_containers(
+        self,
+        flat: dict[str, Container] | object,
+        errors: list[EngineError],
+    ) -> None:
+        for cid, c in flat.items():  # type: ignore[union-attr]
+            # kind must be valid
+            if c.kind is not None and c.kind not in ContainerKind:
+                errors.append(
+                    EngineError(
+                        type="config_error",
+                        message=f"Container '{cid}' has invalid kind '{c.kind}'."
+                        f" Must be one of: {', '.join(k.value for k in ContainerKind)}.",
+                        location=None,
+                        details={"container_id": cid, "kind": str(c.kind)},
+                    )
+                )
+
+            # child code.roots must be sub-paths of parent code.roots
+            if c.parent is not None and c.code is not None:
+                parent = flat.get(c.parent)  # type: ignore[union-attr]
+                if parent is not None and parent.code is not None:
+                    parent_roots = parent.code.roots
+                    for root in c.code.roots:
+                        if not any(root.startswith(pr) for pr in parent_roots):
+                            errors.append(
+                                EngineError(
+                                    type="config_error",
+                                    message=f"Container '{cid}' code root '{root}' is not"
+                                    f" under parent '{c.parent}' roots {list(parent_roots)}.",
+                                    location=None,
+                                    details={
+                                        "container_id": cid,
+                                        "root": root,
+                                        "parent_id": c.parent,
+                                        "parent_roots": list(parent_roots),
+                                    },
+                                )
+                            )
 
     def _validate_container(
         self,
