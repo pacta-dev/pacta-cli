@@ -171,8 +171,8 @@ def test_get_node_field_supported_fields():
         tags=("internal", "critical"),
     )
 
-    assert get_node_field(n, "kind") == SymbolKind.CLASS.value
-    assert get_node_field(n, "node.kind") == SymbolKind.CLASS.value
+    assert get_node_field(n, "symbol_kind") == SymbolKind.CLASS.value
+    assert get_node_field(n, "node.symbol_kind") == SymbolKind.CLASS.value
     assert get_node_field(n, "path") == "services/billing/domain/invoice.py"
     assert get_node_field(n, "name") == "Invoice"
     assert get_node_field(n, "container") == "billing"
