@@ -1,6 +1,9 @@
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from enum import auto
 from typing import Any
+
+from pacta.utils.enum import StrEnum
 
 # Core model entities
 
@@ -38,10 +41,20 @@ class CodeMapping:
     layers: Mapping[str, Layer]  # layer_id -> Layer
 
 
+class ContainerKind(StrEnum):
+    SERVICE = auto()
+    MODULE = auto()
+    LIBRARY = auto()
+
+
 @dataclass(frozen=True, slots=True)
 class Container:
     """
     Container / Service (C4 level 2).
+
+    In v2 schemas, containers can nest via ``children`` and carry an explicit
+    ``kind`` (service, module, library).  Nested containers are flattened
+    into dot-qualified IDs (e.g. ``billing-service.invoice-module``).
     """
 
     id: str
@@ -51,6 +64,11 @@ class Container:
 
     code: CodeMapping | None = None
     tags: tuple[str, ...] = field(default_factory=tuple)
+
+    # v2 fields
+    kind: ContainerKind | None = None
+    children: Mapping[str, "Container"] = field(default_factory=dict)  # populated from "contains" YAML key
+    parent: str | None = None  # dot-qualified ID of parent container, set by resolver
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,8 +112,15 @@ class ArchitectureModel:
     path_roots: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
     layer_patterns: Mapping[str, Mapping[str, tuple[str, ...]]] = field(default_factory=dict)
 
+    @property
+    def containers_flat(self) -> Mapping[str, Container]:
+        """All containers including nested ones, keyed by dot-qualified ID."""
+        result: dict[str, Container] = {}
+        _collect_containers(self.containers, "", result)
+        return result
+
     def get_container(self, container_id: str) -> Container | None:
-        return self.containers.get(container_id)
+        return self.containers_flat.get(container_id)
 
     def get_context_for_container(self, container_id: str) -> str | None:
         return self.container_to_context.get(container_id)
@@ -104,7 +129,20 @@ class ArchitectureModel:
         return self.layer_patterns.get(container_id, {})
 
     def all_container_ids(self) -> tuple[str, ...]:
-        return tuple(self.containers.keys())
+        return tuple(self.containers_flat.keys())
 
     def all_context_ids(self) -> tuple[str, ...]:
         return tuple(self.contexts.keys())
+
+
+def _collect_containers(
+    containers: Mapping[str, Container],
+    prefix: str,
+    out: dict[str, Container],
+) -> None:
+    """Recursively collect containers into a flat dict with dot-qualified keys."""
+    for cid, container in containers.items():
+        qualified = f"{prefix}.{cid}" if prefix else cid
+        out[qualified] = container
+        if container.children:
+            _collect_containers(container.children, qualified, out)

@@ -171,8 +171,8 @@ def test_get_node_field_supported_fields():
         tags=("internal", "critical"),
     )
 
-    assert get_node_field(n, "kind") == SymbolKind.CLASS.value
-    assert get_node_field(n, "node.kind") == SymbolKind.CLASS.value
+    assert get_node_field(n, "symbol_kind") == SymbolKind.CLASS.value
+    assert get_node_field(n, "node.symbol_kind") == SymbolKind.CLASS.value
     assert get_node_field(n, "path") == "services/billing/domain/invoice.py"
     assert get_node_field(n, "name") == "Invoice"
     assert get_node_field(n, "container") == "billing"
@@ -245,3 +245,98 @@ def test_all_of_any_of_not_helpers():
 
     assert not_(p_true)("x") is False
     assert not_(p_false)("x") is True
+
+
+# ----------------------------
+# v2: New node fields (service, kind, symbol_kind)
+# ----------------------------
+
+
+def test_get_node_field_v2_service_and_kind():
+    n = IRNode(
+        id=cid("billing.api.routes"),
+        kind=SymbolKind.MODULE,
+        service="billing-service",
+        container_kind="service",
+        within="service",
+    )
+    assert get_node_field(n, "service") == "billing-service"
+    assert get_node_field(n, "node.service") == "billing-service"
+    assert get_node_field(n, "kind") == "service"
+    assert get_node_field(n, "node.kind") == "service"
+    assert get_node_field(n, "within") == "service"
+    assert get_node_field(n, "node.within") == "service"
+    assert get_node_field(n, "symbol_kind") == SymbolKind.MODULE.value
+
+
+def test_get_node_field_v2_within_for_nested_container():
+    """Test that 'within' differs from 'kind' for nested containers."""
+    n = IRNode(
+        id=cid("billing.domain.invoice.model"),
+        kind=SymbolKind.MODULE,
+        service="billing-service",
+        container_kind="module",  # immediate container is a module
+        within="service",  # top-level container is a service
+    )
+    assert get_node_field(n, "kind") == "module"
+    assert get_node_field(n, "within") == "service"
+
+
+def test_get_node_field_v2_none_when_not_enriched():
+    n = IRNode(id=cid("x"), kind=SymbolKind.MODULE)
+    assert get_node_field(n, "service") is None
+    assert get_node_field(n, "kind") is None
+
+
+# ----------------------------
+# v2: New edge fields (service, kind)
+# ----------------------------
+
+
+def test_get_edge_field_v2_service_and_kind():
+    e = IREdge(
+        src=cid("a"),
+        dst=cid("b"),
+        dep_type=DepType.IMPORT,
+        src_service="billing-service",
+        dst_service="shared-utils",
+        src_container_kind="service",
+        dst_container_kind="library",
+        src_within="service",
+        dst_within="library",
+    )
+    assert get_edge_field(e, "from.service") == "billing-service"
+    assert get_edge_field(e, "to.service") == "shared-utils"
+    assert get_edge_field(e, "from.kind") == "service"
+    assert get_edge_field(e, "to.kind") == "library"
+    assert get_edge_field(e, "from.within") == "service"
+    assert get_edge_field(e, "to.within") == "library"
+
+
+def test_get_edge_field_v2_within_for_nested_containers():
+    """Test that 'within' differs from 'kind' for nested containers."""
+    e = IREdge(
+        src=cid("a"),
+        dst=cid("b"),
+        dep_type=DepType.IMPORT,
+        src_service="shared-utils",
+        dst_service="billing-service",
+        src_container_kind="library",
+        dst_container_kind="module",  # immediate container is a module
+        src_within="library",
+        dst_within="service",  # top-level container is a service
+    )
+    assert get_edge_field(e, "from.kind") == "library"
+    assert get_edge_field(e, "from.within") == "library"
+    assert get_edge_field(e, "to.kind") == "module"
+    assert get_edge_field(e, "to.within") == "service"
+
+
+def test_get_edge_field_v2_none_when_not_enriched():
+    e = IREdge(src=cid("a"), dst=cid("b"), dep_type=DepType.IMPORT)
+    assert get_edge_field(e, "from.service") is None
+    assert get_edge_field(e, "to.service") is None
+    assert get_edge_field(e, "from.kind") is None
+    assert get_edge_field(e, "to.kind") is None
+    assert get_edge_field(e, "from.within") is None
+    assert get_edge_field(e, "to.within") is None

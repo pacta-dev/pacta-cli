@@ -134,13 +134,16 @@ class FieldAst(ExprAst):
     A field reference.
 
     Node targets:
-      - "node.kind", "node.path", "node.name", "node.layer",
+      - "node.symbol_kind", "node.kind", "node.service",
+        "node.path", "node.name", "node.layer",
         "node.context", "node.container", "node.tags", "node.fqname"
 
     Dependency targets:
       - "from.layer", "to.layer"
       - "from.context", "to.context"
       - "from.container", "to.container"
+      - "from.service", "to.service"
+      - "from.kind", "to.kind"
       - "from.fqname", "to.fqname"
       - "dep.type"
       - "loc.file" (optional if you want)

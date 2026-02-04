@@ -24,11 +24,15 @@ nav:
   - Getting Started: getting-started.md
   - User Guide:
     - CLI Reference: cli.md
-    - Architecture Model: architecture.md
+    - Architecture Model:
+      - Overview: architecture/index.md
+      - v1: architecture/v1.md
+      - v2: architecture/v2.md
     - Rules DSL: rules.md
   - Examples:
     - Overview: examples/index.md
     - Simple Layered App: examples/simple-layered-app.md
+    - Microservices Platform: examples/microservices-platform.md
     - Hexagonal Architecture: examples/hexagonal-app.md
     - Legacy Migration: examples/legacy-migration.md
   - Integration:

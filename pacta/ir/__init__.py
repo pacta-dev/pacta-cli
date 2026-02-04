@@ -17,14 +17,7 @@ from pacta.ir.keys import (
 # IR processing
 from pacta.ir.merge import DefaultIRMerger
 from pacta.ir.normalize import DefaultIRNormalizer
-from pacta.ir.select import (
-    EdgeFilter,
-    NodeFilter,
-    match_glob,
-    match_regex,
-    select_edges,
-    select_nodes,
-)
+from pacta.ir.select import match_any_glob, match_glob, match_regex
 from pacta.ir.types import (
     ArchitectureIR,
     CanonicalId,
@@ -67,11 +60,8 @@ __all__ = (
     # indexing
     "IRIndex",
     "build_index",
+    "match_any_glob",
     # selection
-    "NodeFilter",
-    "EdgeFilter",
-    "select_nodes",
-    "select_edges",
     "match_glob",
     "match_regex",
     # validation

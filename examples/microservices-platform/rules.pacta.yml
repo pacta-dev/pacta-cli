@@ -1,0 +1,49 @@
+# Microservices Platform Rules
+#
+# Field reference:
+#   - kind: immediate container's kind (service, module, library)
+#   - within: top-level container's kind (for nested containers)
+#
+# Example: code in billing-service.invoice-module has:
+#   - kind = 'module' (immediate container)
+#   - within = 'service' (top-level container)
+#
+# Use 'within' to match any code inside a service hierarchy (including nested modules).
+# Use 'kind' to match only the immediate container type.
+
+rule:
+  id: no-cross-service-domain-deps
+  name: Domain must not depend on other services
+  severity: error
+  target: dependency
+  action: forbid
+  when:
+    all:
+      - from.service != to.service
+      - from.layer == domain
+  message: Domain code must not depend on another service
+
+rule:
+  id: library-no-service-deps
+  name: Libraries must be independent of services
+  severity: error
+  target: dependency
+  action: forbid
+  when:
+    all:
+      - from.within == library
+      - to.within == service
+  message: Library code must not import service code
+  suggestion: Move shared code to a library or create a proper API contract
+
+rule:
+  id: no-infra-to-api
+  name: Infrastructure must not depend on API layer
+  severity: error
+  target: dependency
+  action: forbid
+  when:
+    all:
+      - from.layer == infra
+      - to.layer == api
+  message: Infrastructure layer must not depend on the API layer

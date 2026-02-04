@@ -34,6 +34,40 @@ rule:
 | `message` | string | No | Message shown on violation (auto-generated if omitted) |
 | `suggestion` | string | No | Remediation guidance |
 
+## Available Fields
+
+### Node Fields (`target: node`)
+
+| Field | Description |
+|-------|-------------|
+| `node.symbol_kind` | Symbol type: `file`, `module`, `class`, `function`, etc. |
+| `node.kind` | Immediate container kind: `service`, `module`, `library` (v2 only) |
+| `node.within` | Top-level container's kind (v2 only) — see [kind vs within](#kind-vs-within) |
+| `node.service` | Top-level container ancestor ID (v2 only) |
+| `node.path` | File path |
+| `node.name` | Symbol name |
+| `node.layer` | Architectural layer |
+| `node.context` | Bounded context |
+| `node.container` | Container ID (dot-qualified for nested containers in v2) |
+| `node.tags` | Tags inherited from container |
+| `node.fqname` | Fully qualified name |
+| `node.language` | Source language |
+
+### Dependency Fields (`target: dependency`)
+
+| Field | Description |
+|-------|-------------|
+| `from.layer` / `to.layer` | Source/target layer |
+| `from.context` / `to.context` | Source/target bounded context |
+| `from.container` / `to.container` | Source/target container ID |
+| `from.service` / `to.service` | Source/target top-level service ID (v2 only) |
+| `from.kind` / `to.kind` | Source/target immediate container kind (v2 only) |
+| `from.within` / `to.within` | Source/target top-level container's kind (v2 only) — see [kind vs within](#kind-vs-within) |
+| `from.fqname` / `to.fqname` | Fully qualified names |
+| `from.id` / `to.id` | Full canonical ID strings |
+| `dep.type` | Dependency type (`import`, `call`, etc.) |
+| `loc.file` | Source location file |
+
 ## Conditions
 
 ### Layer Conditions
@@ -59,7 +93,7 @@ when:
     - to.layer == application
 ```
 
-## Example: Clean Architecture Rules
+## Example: Clean Architecture Rules (v1)
 
 ```yaml
 # Domain cannot depend on Infrastructure
@@ -121,3 +155,68 @@ rule:
   message: UI layer should not directly depend on Infrastructure layer
   suggestion: Access infrastructure through application services instead
 ```
+
+## kind vs within
+
+In v2 schemas with nested containers, there's an important distinction:
+
+| Field | Meaning | Example |
+|-------|---------|---------|
+| `kind` | Immediate container's kind | `module` for code in `billing-service.invoice-module` |
+| `within` | Top-level container's kind | `service` for any code inside `billing-service` |
+
+**When to use each:**
+
+- Use **`kind`** when you want to match the specific container type (e.g., "only code directly in a module")
+- Use **`within`** when you want to match anything inside a service hierarchy (e.g., "any code belonging to a service, including nested modules")
+
+**Example:** Code at `services/billing/domain/invoice/model/invoice.py` inside `billing-service.invoice-module`:
+
+```
+billing-service (kind: service)
+└── invoice-module (kind: module)
+    └── invoice.py  ← this file
+```
+
+| Field | Value |
+|-------|-------|
+| `kind` | `module` (immediate container) |
+| `within` | `service` (top-level container) |
+
+## Example: Cross-Service Rules (v2)
+
+These rules use v2-only fields (`from.service`, `to.service`, `from.kind`, `to.kind`, `from.within`, `to.within`):
+
+```yaml
+# Forbid cross-service domain dependencies
+rule:
+  id: no-cross-service-domain-deps
+  name: Domain must not depend on other services
+  severity: error
+  target: dependency
+  action: forbid
+  when:
+    all:
+      - from.service != to.service
+      - from.layer == domain
+  message: Domain code must not depend on another service
+
+# Libraries must not depend on services (using 'within' for nested containers)
+rule:
+  id: library-no-service-deps
+  name: Libraries must be independent of services
+  severity: error
+  target: dependency
+  action: forbid
+  when:
+    all:
+      - from.within == library
+      - to.within == service
+  message: Library code must not import service code
+  suggestion: Move shared code to a library or create a proper API contract
+```
+
+!!! note "Why use `within` instead of `kind`?"
+    Using `to.kind == service` would NOT match code inside nested modules like `billing-service.invoice-module`, because the immediate container's kind is `module`, not `service`.
+
+    Using `to.within == service` matches ANY code inside a service hierarchy, including nested modules.

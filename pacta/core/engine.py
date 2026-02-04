@@ -1,29 +1,26 @@
 from dataclasses import dataclass
 
 from pacta.core.config import EngineConfig
-from pacta.ir.merge import DefaultIRMerger
-from pacta.ir.normalize import DefaultIRNormalizer
-from pacta.ir.types import ArchitectureIR
-from pacta.mapping.enricher import DefaultArchitectureEnricher
-from pacta.model.loader import DefaultArchitectureModelLoader
-from pacta.model.resolver import DefaultModelResolver
-from pacta.model.types import ArchitectureModel
-from pacta.model.validator import DefaultArchitectureModelValidator
+from pacta.ir import ArchitectureIR, DefaultIRMerger, DefaultIRNormalizer, validate_ir
+from pacta.mapping import DefaultArchitectureEnricher
+from pacta.model import (
+    ArchitectureModel,
+    DefaultArchitectureModelLoader,
+    DefaultArchitectureModelValidator,
+    DefaultModelResolver,
+)
 from pacta.plugins.interfaces import AnalyzeConfig
 from pacta.plugins.registry import AnalyzerRegistry
-from pacta.reporting.builder import DefaultReportBuilder
-from pacta.reporting.keys import DefaultViolationKeyFactory
-from pacta.reporting.types import EngineError, Report, RunInfo, Violation
-from pacta.rules.compiler import RulesCompiler
-from pacta.rules.dsl import DefaultDSLParser
-from pacta.rules.evaluator import DefaultRuleEvaluator
-from pacta.rules.loader import DefaultRuleSourceLoader
-from pacta.rules.types import RuleSet
-from pacta.snapshot.baseline import DefaultBaselineService
-from pacta.snapshot.builder import DefaultSnapshotBuilder
-from pacta.snapshot.diff import DefaultSnapshotDiffEngine
-from pacta.snapshot.store import FsSnapshotStore
-from pacta.snapshot.types import Snapshot, SnapshotDiff
+from pacta.reporting import DefaultReportBuilder, DefaultViolationKeyFactory, EngineError, Report, RunInfo, Violation
+from pacta.rules import DefaultDSLParser, DefaultRuleEvaluator, DefaultRuleSourceLoader, RulesCompiler, RuleSet
+from pacta.snapshot import (
+    DefaultBaselineService,
+    DefaultSnapshotBuilder,
+    DefaultSnapshotDiffEngine,
+    FsSnapshotStore,
+    Snapshot,
+    SnapshotDiff,
+)
 from pacta.vcs.git import GitVCSProvider
 
 
@@ -148,6 +145,8 @@ class DefaultPactaEngine:
         # ----------------------------
         combined_ir = self.ir_merger.merge(raw_irs) if raw_irs else ArchitectureIR.empty(cfg.repo_root)
         normalized_ir = self.ir_normalizer.normalize(combined_ir)
+
+        engine_errors.extend(validate_ir(normalized_ir))
 
         # ----------------------------
         # 4) Load + validate model (architecture.yaml)

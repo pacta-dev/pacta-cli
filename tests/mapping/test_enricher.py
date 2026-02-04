@@ -13,6 +13,7 @@ from pacta.model.types import (
     ArchitectureModel,
     CodeMapping,
     Container,
+    ContainerKind,
     Context,
     Layer,
 )
@@ -637,3 +638,201 @@ def test_enricher_exact_root_match():
 
     # node3: prefix but not subdirectory - should NOT match
     assert enriched.nodes[2].container is None
+
+
+# ----------------------------
+# v2: Nested container enrichment
+# ----------------------------
+
+
+def build_v2_test_model() -> ArchitectureModel:
+    """Build a v2 model with nested containers for enrichment tests."""
+    contexts = {
+        "billing": Context(id="billing", name="Billing Context"),
+    }
+    containers = {
+        "billing-service": Container(
+            id="billing-service",
+            kind=ContainerKind.SERVICE,
+            context="billing",
+            code=CodeMapping(
+                roots=("services/billing",),
+                layers={
+                    "api": Layer(id="api", patterns=("services/billing/api/**",)),
+                    "domain": Layer(id="domain", patterns=("services/billing/domain/**",)),
+                },
+            ),
+            tags=("critical",),
+            children={
+                "invoice-module": Container(
+                    id="invoice-module",
+                    kind=ContainerKind.MODULE,
+                    code=CodeMapping(
+                        roots=("services/billing/domain/invoice",),
+                        layers={
+                            "model": Layer(id="model", patterns=("services/billing/domain/invoice/model/**",)),
+                            "repo": Layer(id="repo", patterns=("services/billing/domain/invoice/repo/**",)),
+                        },
+                    ),
+                ),
+            },
+        ),
+        "shared-utils": Container(
+            id="shared-utils",
+            kind=ContainerKind.LIBRARY,
+            code=CodeMapping(
+                roots=("libs/shared",),
+                layers={},
+            ),
+        ),
+    }
+    model = ArchitectureModel(
+        version=2,
+        contexts=contexts,
+        containers=containers,
+        relations=(),
+        metadata={},
+    )
+    return DefaultModelResolver().resolve(model)
+
+
+def test_enricher_v2_nested_container_deepest_match():
+    """Nested container with more specific root wins over parent."""
+    model = build_v2_test_model()
+
+    node = IRNode(
+        id=CanonicalId(language=Language.PYTHON, code_root="billing", fqname="invoice.model.entity"),
+        kind=SymbolKind.MODULE,
+        path="services/billing/domain/invoice/model/entity.py",
+    )
+    ir = ArchitectureIR(
+        schema_version=2,
+        produced_by="test",
+        repo_root="/test",
+        nodes=(node,),
+        edges=(),
+        metadata={},
+    )
+
+    enriched = DefaultArchitectureEnricher().enrich(ir, model)
+    n = enriched.nodes[0]
+
+    # Should match the nested container (longer root)
+    assert n.container == "billing-service.invoice-module"
+    assert n.layer == "model"
+    assert n.context == "billing"  # inherited from parent
+    assert n.service == "billing-service"
+    assert n.container_kind == "module"
+
+
+def test_enricher_v2_parent_container_match():
+    """Node under parent root but not nested child root matches parent."""
+    model = build_v2_test_model()
+
+    node = IRNode(
+        id=CanonicalId(language=Language.PYTHON, code_root="billing", fqname="billing.api.routes"),
+        kind=SymbolKind.MODULE,
+        path="services/billing/api/routes.py",
+    )
+    ir = ArchitectureIR(
+        schema_version=2,
+        produced_by="test",
+        repo_root="/test",
+        nodes=(node,),
+        edges=(),
+        metadata={},
+    )
+
+    enriched = DefaultArchitectureEnricher().enrich(ir, model)
+    n = enriched.nodes[0]
+
+    assert n.container == "billing-service"
+    assert n.layer == "api"
+    assert n.service == "billing-service"
+    assert n.container_kind == "service"
+
+
+def test_enricher_v2_library_container():
+    """Library container sets container_kind correctly."""
+    model = build_v2_test_model()
+
+    node = IRNode(
+        id=CanonicalId(language=Language.PYTHON, code_root="shared", fqname="libs.shared.util"),
+        kind=SymbolKind.MODULE,
+        path="libs/shared/util.py",
+    )
+    ir = ArchitectureIR(
+        schema_version=2,
+        produced_by="test",
+        repo_root="/test",
+        nodes=(node,),
+        edges=(),
+        metadata={},
+    )
+
+    enriched = DefaultArchitectureEnricher().enrich(ir, model)
+    n = enriched.nodes[0]
+
+    assert n.container == "shared-utils"
+    assert n.service == "shared-utils"
+    assert n.container_kind == "library"
+
+
+def test_enricher_v2_edge_service_and_kind():
+    """Edges get src/dst service and container_kind from enriched nodes."""
+    model = build_v2_test_model()
+
+    src_node = IRNode(
+        id=CanonicalId(language=Language.PYTHON, code_root="billing", fqname="billing.api.routes"),
+        kind=SymbolKind.MODULE,
+        path="services/billing/api/routes.py",
+    )
+    dst_node = IRNode(
+        id=CanonicalId(language=Language.PYTHON, code_root="shared", fqname="libs.shared.util"),
+        kind=SymbolKind.MODULE,
+        path="libs/shared/util.py",
+    )
+    edge = IREdge(src=src_node.id, dst=dst_node.id, dep_type=DepType.IMPORT)
+
+    ir = ArchitectureIR(
+        schema_version=2,
+        produced_by="test",
+        repo_root="/test",
+        nodes=(src_node, dst_node),
+        edges=(edge,),
+        metadata={},
+    )
+
+    enriched = DefaultArchitectureEnricher().enrich(ir, model)
+    e = enriched.edges[0]
+
+    assert e.src_service == "billing-service"
+    assert e.src_container_kind == "service"
+    assert e.dst_service == "shared-utils"
+    assert e.dst_container_kind == "library"
+
+
+def test_enricher_v2_unmatched_node_has_no_service():
+    """Nodes that don't match any container have None for service/container_kind."""
+    model = build_v2_test_model()
+
+    node = IRNode(
+        id=CanonicalId(language=Language.PYTHON, code_root="other", fqname="lib.utils"),
+        kind=SymbolKind.MODULE,
+        path="other/utils.py",
+    )
+    ir = ArchitectureIR(
+        schema_version=2,
+        produced_by="test",
+        repo_root="/test",
+        nodes=(node,),
+        edges=(),
+        metadata={},
+    )
+
+    enriched = DefaultArchitectureEnricher().enrich(ir, model)
+    n = enriched.nodes[0]
+
+    assert n.container is None
+    assert n.service is None
+    assert n.container_kind is None

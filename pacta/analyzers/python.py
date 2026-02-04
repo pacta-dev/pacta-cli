@@ -1,11 +1,11 @@
 import ast
 import re
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-from pacta.ir.keys import edge_key, node_key
+from pacta.ir.keys import dedupe_edges, dedupe_nodes
 from pacta.ir.types import (
     ArchitectureIR,
     CanonicalId,
@@ -175,8 +175,10 @@ class PythonAnalyzer:
                 )
 
         # 3) deterministically dedupe + order
-        nodes_t = tuple(self._dedupe_nodes(nodes, deterministic=config.deterministic))
-        edges_t = tuple(self._dedupe_edges(edges, deterministic=config.deterministic))
+        nodes_t = dedupe_nodes(nodes, deterministic=config.deterministic)
+        edges_t = dedupe_edges(
+            edges, include_location=False, include_details=False, deterministic=config.deterministic
+        )
 
         return ArchitectureIR(
             schema_version=1,
@@ -391,12 +393,6 @@ class PythonAnalyzer:
 
         return None
 
-    def _package_of(self, src_module: str) -> str:
-        if not src_module:
-            return ""
-        parts = src_module.split(".")
-        return ".".join(parts[:-1]) if len(parts) > 1 else ""
-
     def _resolve_relative_base(self, src_module: str, level: int, module: str) -> str:
         """
         Resolve relative import base.
@@ -418,35 +414,3 @@ class PythonAnalyzer:
             start=SourcePos(line=max(1, int(lineno)), column=max(1, int(col_offset) + 1)),
             end=None,
         )
-
-    def _dedupe_nodes(self, nodes: Iterable[IRNode], *, deterministic: bool) -> list[IRNode]:
-        """
-        Dedupe by node_key() with deterministic tie-breaking (keep first).
-        Then optionally sort by key for stability.
-        """
-        seen: dict[str, IRNode] = {}
-        for n in nodes:
-            k = node_key(n)
-            if k not in seen:
-                seen[k] = n
-
-        out = list(seen.values())
-        if deterministic:
-            out.sort(key=lambda n: node_key(n))
-        return out
-
-    def _dedupe_edges(self, edges: Iterable[IREdge], *, deterministic: bool) -> list[IREdge]:
-        """
-        Dedupe by edge_key() (without location/details) with deterministic tie-breaking (keep first).
-        Then optionally sort by key for stability.
-        """
-        seen: dict[str, IREdge] = {}
-        for e in edges:
-            k = edge_key(e, include_location=False, include_details=False)
-            if k not in seen:
-                seen[k] = e
-
-        out = list(seen.values())
-        if deterministic:
-            out.sort(key=lambda e: edge_key(e, include_location=False, include_details=False))
-        return out

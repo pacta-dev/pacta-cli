@@ -170,7 +170,7 @@ def test_compile_in_operator_with_list_literal():
         action="forbid",
         when=NodeWhenAst(
             predicate=CompareAst(
-                left=FieldAst(path="kind"),
+                left=FieldAst(path="symbol_kind"),
                 op="in",
                 right=lit_list(["module", "package"]),
             )

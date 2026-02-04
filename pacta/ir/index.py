@@ -4,11 +4,6 @@ from dataclasses import dataclass
 from pacta.ir.types import ArchitectureIR, CanonicalId, DepType, IREdge, IRNode, SymbolKind
 
 
-def _cid_str(cid: CanonicalId) -> str:
-    # CanonicalId.__str__ is already stable; use as dict key
-    return str(cid)
-
-
 @dataclass(frozen=True, slots=True)
 class IRIndex:
     """
@@ -39,15 +34,15 @@ class IRIndex:
 
     # Convenience
     def get_node(self, node_id: CanonicalId | str) -> IRNode | None:
-        key = node_id if isinstance(node_id, str) else _cid_str(node_id)
+        key = node_id if isinstance(node_id, str) else str(node_id)
         return self.nodes_by_id.get(key)
 
     def out_edges(self, src_id: CanonicalId | str) -> tuple[IREdge, ...]:
-        key = src_id if isinstance(src_id, str) else _cid_str(src_id)
+        key = src_id if isinstance(src_id, str) else str(src_id)
         return self.out_edges_by_src.get(key, ())
 
     def in_edges(self, dst_id: CanonicalId | str) -> tuple[IREdge, ...]:
-        key = dst_id if isinstance(dst_id, str) else _cid_str(dst_id)
+        key = dst_id if isinstance(dst_id, str) else str(dst_id)
         return self.in_edges_by_dst.get(key, ())
 
     def nodes_in_container(self, container_id: str) -> tuple[IRNode, ...]:
@@ -72,13 +67,13 @@ def build_index(ir: ArchitectureIR) -> IRIndex:
     # nodes_by_id
     nodes_by_id: dict[str, IRNode] = {}
     for n in ir.nodes:
-        nodes_by_id[_cid_str(n.id)] = n
+        nodes_by_id[str(n.id)] = n
 
     # stable node sorting key
     def node_sort_key(n: IRNode) -> tuple:
         return (
             str(n.kind.value),
-            _cid_str(n.id),
+            str(n.id),
             n.path or "",
             n.name or "",
         )
@@ -108,8 +103,8 @@ def build_index(ir: ArchitectureIR) -> IRIndex:
             loc_key = (loc.file, loc.start.line, loc.start.column)
         return (
             e.dep_type.value,
-            _cid_str(e.src),
-            _cid_str(e.dst),
+            str(e.src),
+            str(e.dst),
             loc_key,
         )
 
@@ -122,8 +117,8 @@ def build_index(ir: ArchitectureIR) -> IRIndex:
     for e in edges_sorted:
         edges_by_type.setdefault(e.dep_type, []).append(e)
 
-        src_key = _cid_str(e.src)
-        dst_key = _cid_str(e.dst)
+        src_key = str(e.src)
+        dst_key = str(e.dst)
         out_edges_by_src.setdefault(src_key, []).append(e)
         in_edges_by_dst.setdefault(dst_key, []).append(e)
 

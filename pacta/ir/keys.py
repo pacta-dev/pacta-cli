@@ -95,20 +95,22 @@ def edge_key(
 # Batch helpers
 
 
-def dedupe_nodes(nodes: Iterable[IRNode]) -> tuple[IRNode, ...]:
+def dedupe_nodes(nodes: Iterable[IRNode], *, deterministic: bool = False) -> tuple[IRNode, ...]:
     """
-    Deduplicate nodes by node_key(), keeping first occurrence.
+    Dedupe by node_key() with deterministic tie-breaking (keep first).
+    Then optionally sort by key for stability.
     """
-    seen: set[str] = set()
-    result: list[IRNode] = []
-
+    seen: dict[str, IRNode] = {}
     for n in nodes:
         k = node_key(n)
         if k not in seen:
-            seen.add(k)
-            result.append(n)
+            seen[k] = n
 
-    return tuple(result)
+    out = list(seen.values())
+    if deterministic:
+        out.sort(key=lambda n: node_key(n))
+
+    return tuple(out)
 
 
 def dedupe_edges(
@@ -116,21 +118,19 @@ def dedupe_edges(
     *,
     include_location: bool = False,
     include_details: bool = False,
+    deterministic: bool = False,
 ) -> tuple[IREdge, ...]:
     """
-    Deduplicate edges by edge_key().
+    Dedupe by edge_key(). Then optionally sort by key for stability.
     """
-    seen: set[str] = set()
-    result: list[IREdge] = []
-
+    seen: dict[str, IREdge] = {}
     for e in edges:
-        k = edge_key(
-            e,
-            include_location=include_location,
-            include_details=include_details,
-        )
+        k = edge_key(e, include_location=include_location, include_details=include_details)
         if k not in seen:
-            seen.add(k)
-            result.append(e)
+            seen[k] = e
 
-    return tuple(result)
+    out = list(seen.values())
+    if deterministic:
+        out.sort(key=lambda e: edge_key(e, include_location=include_location, include_details=include_details))
+
+    return tuple(out)

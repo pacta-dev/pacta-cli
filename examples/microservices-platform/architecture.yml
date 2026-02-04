@@ -1,0 +1,85 @@
+version: 2
+
+system:
+  id: microservices-platform
+  name: Microservices Platform
+
+contexts:
+  billing:
+    name: Billing Context
+    description: Handles invoicing, payments, and billing operations
+  identity:
+    name: Identity Context
+    description: User authentication and authorization
+
+containers:
+  billing-service:
+    kind: service
+    name: Billing Service
+    context: billing
+    code:
+      roots:
+        - services/billing
+      layers:
+        api:
+          name: API Layer
+          patterns:
+            - services/billing/api/**
+        domain:
+          name: Domain Layer
+          patterns:
+            - services/billing/domain/**
+    contains:
+      invoice-module:
+        kind: module
+        name: Invoice Module
+        code:
+          roots:
+            - services/billing/domain/invoice
+          layers:
+            model:
+              name: Domain Model
+              patterns:
+                - services/billing/domain/invoice/model/**
+            repo:
+              name: Repository
+              patterns:
+                - services/billing/domain/invoice/repo/**
+
+  identity-service:
+    kind: service
+    name: Identity Service
+    context: identity
+    code:
+      roots:
+        - services/identity
+      layers:
+        domain:
+          name: Domain Layer
+          patterns:
+            - services/identity/core/**
+        infra:
+          name: Infrastructure Layer
+          patterns:
+            - services/identity/db/**
+
+  shared-utils:
+    kind: library
+    name: Shared Utilities
+    code:
+      roots:
+        - libs/shared
+
+interactions:
+  - from: billing-service
+    to: identity-service
+    protocol: http
+    description: Billing verifies user identity
+  - from: billing-service
+    to: shared-utils
+    protocol: import
+    description: Billing uses shared utilities
+  - from: identity-service
+    to: shared-utils
+    protocol: import
+    description: Identity uses shared utilities

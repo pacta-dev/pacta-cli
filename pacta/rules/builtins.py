@@ -90,7 +90,11 @@ def get_node_field(node: IRNode, path: str) -> Any:
     Runtime field extraction for node predicates.
 
     Supported paths:
-      - kind, path, name, layer, context, container, tags
+      - symbol_kind (SymbolKind — file, module, class, etc.)
+      - kind (immediate container kind — service, module, library)
+      - within (top-level container's kind — for nested containers)
+      - service (top-level container ancestor)
+      - path, name, layer, context, container, tags
       - fqname (node.id.fqname)
       - id (str(node.id))
       - code_root (node.id.code_root)
@@ -100,8 +104,14 @@ def get_node_field(node: IRNode, path: str) -> Any:
     if p.startswith("node."):
         p = p[len("node.") :]
 
-    if p == "kind":
+    if p == "symbol_kind":
         return node.kind.value
+    if p == "kind":
+        return node.container_kind
+    if p == "within":
+        return node.within
+    if p == "service":
+        return node.service
     if p == "path":
         return node.path
     if p == "name":
@@ -135,6 +145,9 @@ def get_edge_field(edge: IREdge, path: str) -> Any:
       - from.layer / to.layer
       - from.context / to.context
       - from.container / to.container
+      - from.service / to.service
+      - from.kind / to.kind (immediate container kind)
+      - from.within / to.within (top-level container's kind)
       - from.fqname / to.fqname
       - from.id / to.id
       - dep.type
@@ -156,6 +169,21 @@ def get_edge_field(edge: IREdge, path: str) -> Any:
         return edge.src_container
     if p == "to.container":
         return edge.dst_container
+
+    if p == "from.service":
+        return edge.src_service
+    if p == "to.service":
+        return edge.dst_service
+
+    if p == "from.kind":
+        return edge.src_container_kind
+    if p == "to.kind":
+        return edge.dst_container_kind
+
+    if p == "from.within":
+        return edge.src_within
+    if p == "to.within":
+        return edge.dst_within
 
     if p == "from.fqname":
         return edge.src.fqname

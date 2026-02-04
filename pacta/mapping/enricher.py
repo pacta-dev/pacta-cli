@@ -72,12 +72,30 @@ class DefaultArchitectureEnricher:
         if container_id is not None:
             context_id = model.get_context_for_container(container_id)
 
+        # v2: derive service (top-level ancestor), container_kind, and within
+        service: str | None = None
+        container_kind: str | None = None
+        within: str | None = None
+        if container_id is not None:
+            service = container_id.split(".")[0]
+            # container_kind = immediate container's kind
+            container = model.get_container(container_id)
+            if container is not None and container.kind is not None:
+                container_kind = container.kind.value
+            # within = top-level container's kind (for nested containers)
+            top_container = model.get_container(service)
+            if top_container is not None and top_container.kind is not None:
+                within = top_container.kind.value
+
         # Return enriched node if anything changed, otherwise return original
         if (
             node.container == container_id
             and node.layer == layer_id
             and node.context == context_id
             and node.tags == tags
+            and node.service == service
+            and node.container_kind == container_kind
+            and node.within == within
         ):
             return node
 
@@ -87,6 +105,9 @@ class DefaultArchitectureEnricher:
             layer=layer_id,
             context=context_id,
             tags=tags,
+            service=service,
+            container_kind=container_kind,
+            within=within,
         )
 
     def _match_container(self, node: IRNode, model: ArchitectureModel) -> str | None:
@@ -160,10 +181,16 @@ class DefaultArchitectureEnricher:
         src_container = src_node.container if src_node else None
         src_layer = src_node.layer if src_node else None
         src_context = src_node.context if src_node else None
+        src_service = src_node.service if src_node else None
+        src_container_kind = src_node.container_kind if src_node else None
+        src_within = src_node.within if src_node else None
 
         dst_container = dst_node.container if dst_node else None
         dst_layer = dst_node.layer if dst_node else None
         dst_context = dst_node.context if dst_node else None
+        dst_service = dst_node.service if dst_node else None
+        dst_container_kind = dst_node.container_kind if dst_node else None
+        dst_within = dst_node.within if dst_node else None
 
         # Return enriched edge if anything changed
         if (
@@ -173,6 +200,12 @@ class DefaultArchitectureEnricher:
             and edge.dst_container == dst_container
             and edge.dst_layer == dst_layer
             and edge.dst_context == dst_context
+            and edge.src_service == src_service
+            and edge.dst_service == dst_service
+            and edge.src_container_kind == src_container_kind
+            and edge.dst_container_kind == dst_container_kind
+            and edge.src_within == src_within
+            and edge.dst_within == dst_within
         ):
             return edge
 
@@ -184,6 +217,12 @@ class DefaultArchitectureEnricher:
             dst_container=dst_container,
             dst_layer=dst_layer,
             dst_context=dst_context,
+            src_service=src_service,
+            dst_service=dst_service,
+            src_container_kind=src_container_kind,
+            dst_container_kind=dst_container_kind,
+            src_within=src_within,
+            dst_within=dst_within,
         )
 
     def _normalize_path(self, path: str) -> str:

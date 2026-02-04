@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from pacta.model.types import ArchitectureModel, CodeMapping, Container, Context, Layer, Relation
+from pacta.model.types import ArchitectureModel, CodeMapping, Container, ContainerKind, Context, Layer, Relation
+
+_SUPPORTED_VERSIONS = {1, 2}
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +39,11 @@ class DefaultArchitectureModelLoader:
         version = data.get("version", 1)
         if not isinstance(version, int):
             raise ModelLoadError(code="invalid_version", message="'version' must be an integer.")
+        if version not in _SUPPORTED_VERSIONS:
+            raise ModelLoadError(
+                code="unsupported_version",
+                message=f"Unsupported model version: {version}. Supported: {sorted(_SUPPORTED_VERSIONS)}.",
+            )
 
         metadata: dict[str, Any] = {}
         # carry system into metadata (README has system section)
@@ -51,9 +58,13 @@ class DefaultArchitectureModelLoader:
                 metadata[k] = v
 
         contexts = self._parse_contexts(data.get("contexts"))
-        containers = self._parse_containers(data.get("containers"))
+        containers = self._parse_containers(data.get("containers"), version=version)
 
-        raw_relations = data.get("relations") if data.get("relations") is not None else data.get("communication") or ()
+        raw_relations = (
+            data.get("relations")
+            if data.get("relations") is not None
+            else data.get("interactions") or data.get("communication") or ()
+        )
 
         relations = self._parse_relations(raw_relations)
 
@@ -123,7 +134,7 @@ class DefaultArchitectureModelLoader:
             )
         return out
 
-    def _parse_containers(self, raw: Any) -> dict[str, Container]:
+    def _parse_containers(self, raw: Any, *, version: int = 1) -> dict[str, Container]:
         if raw is None:
             return {}
 
@@ -147,6 +158,30 @@ class DefaultArchitectureModelLoader:
             else:
                 tags_tuple = ()
 
+            # v2 fields
+            kind: ContainerKind | None = None
+            children: dict[str, Container] = {}
+            if version >= 2:
+                raw_kind = spec.get("kind")
+                if raw_kind is None:
+                    raise ModelLoadError(
+                        code="missing_container_kind",
+                        message=f"Container '{cid}' must have a 'kind' field in v2 schema.",
+                    )
+                try:
+                    kind = ContainerKind(str(raw_kind))
+                except ValueError as ex:
+                    raise ModelLoadError(
+                        code="invalid_container_kind",
+                        message=(
+                            f"Container '{cid}' has invalid kind '{raw_kind}'. "
+                            f"Must be one of: {', '.join(k.value for k in ContainerKind)}."
+                        ),
+                    ) from ex
+                raw_contains = spec.get("contains")
+                if raw_contains is not None:
+                    children = self._parse_containers(raw_contains, version=version)
+
             out[cid] = Container(
                 id=cid,
                 name=spec.get("name"),
@@ -154,6 +189,8 @@ class DefaultArchitectureModelLoader:
                 description=spec.get("description"),
                 code=code,
                 tags=tags_tuple,
+                kind=kind,
+                children=children,
             )
 
         return out

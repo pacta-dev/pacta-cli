@@ -34,7 +34,10 @@ class _CompiledWhen:
 def _get_node_field(n: IRNode, field: str) -> Any:
     """
     Supported node fields (frontends may use either node.<x> or <x>):
-      - kind (SymbolKind.value)
+      - symbol_kind (SymbolKind.value — file, module, class, etc.)
+      - kind (immediate container kind — service, module, library)
+      - within (top-level container's kind — for nested containers)
+      - service (top-level container ancestor)
       - path
       - name
       - layer
@@ -50,8 +53,14 @@ def _get_node_field(n: IRNode, field: str) -> Any:
     if f.startswith("node."):
         f = f[len("node.") :]
 
-    if f == "kind":
+    if f == "symbol_kind":
         return n.kind.value
+    if f == "kind":
+        return n.container_kind
+    if f == "within":
+        return n.within
+    if f == "service":
+        return n.service
     if f == "path":
         return n.path
     if f == "name":
@@ -82,6 +91,9 @@ def _get_edge_field(e: IREdge, field: str) -> Any:
       - from.layer / to.layer
       - from.context / to.context
       - from.container / to.container
+      - from.service / to.service
+      - from.kind / to.kind (immediate container kind)
+      - from.within / to.within (top-level container's kind)
       - from.fqname / to.fqname
       - from.id / to.id  (full canonical id string)
       - dep.type (DepType.value)
@@ -103,6 +115,21 @@ def _get_edge_field(e: IREdge, field: str) -> Any:
         return e.src_container
     if f == "to.container":
         return e.dst_container
+
+    if f == "from.service":
+        return e.src_service
+    if f == "to.service":
+        return e.dst_service
+
+    if f == "from.kind":
+        return e.src_container_kind
+    if f == "to.kind":
+        return e.dst_container_kind
+
+    if f == "from.within":
+        return e.src_within
+    if f == "to.within":
+        return e.dst_within
 
     if f == "from.fqname":
         return e.src.fqname

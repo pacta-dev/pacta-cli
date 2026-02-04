@@ -229,6 +229,6 @@ myproject/
 **Next steps:**
 
 - [CLI Reference](cli.md) — Commands and options
-- [Architecture Model](architecture.md) — Configuration schema
+- [Architecture Model](architecture/index.md) — Configuration schema
 - [Rules DSL](rules.md) — Rule conditions
 - [CI Integration](ci-integration.md) — Automate in your pipeline

@@ -9,6 +9,7 @@ Pacta includes several example projects demonstrating different architectural pa
 | [Simple Layered App](simple-layered-app.md) | Classic N-tier architecture | Teams familiar with layered architecture |
 | [Hexagonal Architecture](hexagonal-app.md) | Ports and Adapters pattern | Domain-driven design, high testability |
 | [Legacy Migration](legacy-migration.md) | Baseline workflow for brownfield | Existing codebases, incremental adoption |
+| [Microservices Platform](microservices-platform.md) | v2 schema with nested containers | Multi-service systems, modular monoliths |
 
 ## Quick Start
 

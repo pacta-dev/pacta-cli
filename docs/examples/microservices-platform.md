@@ -1,0 +1,1 @@
+--8<-- "examples/microservices-platform/README.md"
