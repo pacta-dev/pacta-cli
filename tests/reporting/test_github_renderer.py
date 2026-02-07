@@ -1,3 +1,4 @@
+from pacta import PACTA_VERSION
 from pacta.reporting.renderers.github import GitHubReportRenderer
 from pacta.reporting.types import (
     DiffSummary,
@@ -23,7 +24,7 @@ def _make_run(**overrides):
         baseline_ref="baseline",
         mode="full",
         created_at="2025-01-22T12:00:00+00:00",
-        tool_version="0.0.7",
+        tool_version=PACTA_VERSION,
         metadata={},
     )
     defaults.update(overrides)
@@ -71,7 +72,7 @@ def _make_report(*, violations=(), diff=None, trends=None, baseline_ref="baselin
 
     return Report(
         tool="pacta",
-        version="0.0.7",
+        version=PACTA_VERSION,
         run=_make_run(baseline_ref=baseline_ref),
         summary=Summary(
             total_violations=len(all_v),
@@ -99,7 +100,7 @@ class TestGitHubRendererHeader:
     def test_no_branch_or_commit(self):
         report = Report(
             tool="pacta",
-            version="0.0.7",
+            version=PACTA_VERSION,
             run=_make_run(branch=None, commit=None, baseline_ref=None),
             summary=Summary(total_violations=0, by_severity={}, by_status={}, by_rule={}, engine_errors=0),
             violations=(),
@@ -239,7 +240,7 @@ class TestGitHubRendererFooter:
         report = _make_report()
         out = GitHubReportRenderer().render(report)
         assert "Pacta" in out
-        assert "v0.0.7" in out
+        assert PACTA_VERSION in out
 
 
 class TestGitHubRendererFullOutput:

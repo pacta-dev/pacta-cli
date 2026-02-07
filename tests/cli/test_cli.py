@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+from pacta import PACTA_VERSION
 from pacta.cli.main import main
 from pacta.reporting.types import EngineError, Report, RuleRef, RunInfo, Severity, Summary, Violation
 
@@ -36,7 +37,7 @@ def create_test_report(repo_root, violations=None, engine_errors=None, **overrid
 
     return Report(
         tool="pacta",
-        version="0.0.7",
+        version=PACTA_VERSION,
         run=RunInfo(
             repo_root=str(repo_root),
             commit=None,
@@ -46,7 +47,7 @@ def create_test_report(repo_root, violations=None, engine_errors=None, **overrid
             baseline_ref=overrides.get("baseline_ref"),
             mode=overrides.get("mode", "full"),
             created_at=None,
-            tool_version="0.0.7",
+            tool_version=PACTA_VERSION,
             metadata={},
         ),
         summary=summary,

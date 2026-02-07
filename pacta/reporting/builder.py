@@ -6,6 +6,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any
 
+from pacta import PACTA_VERSION
 from pacta.reporting._extract import get_field
 from pacta.reporting.types import (
     DiffSummary,
@@ -71,7 +72,7 @@ class DefaultReportBuilder:
     - Summary counts
     """
 
-    def __init__(self, *, tool: str = "pacta", version: str = "0.0.7") -> None:
+    def __init__(self, *, tool: str = "pacta", version: str = PACTA_VERSION) -> None:
         self._tool = tool
         self._version = version
 

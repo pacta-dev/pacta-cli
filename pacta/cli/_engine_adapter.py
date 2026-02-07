@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from pacta import PACTA_VERSION
 from pacta.core.config import EngineConfig
 from pacta.core.engine import DefaultPactaEngine
 from pacta.reporting.builder import DefaultReportBuilder
@@ -95,7 +96,7 @@ def run_engine_scan(
         metadata={},
     )
 
-    builder = DefaultReportBuilder(tool="pacta", version=tool_version or "0.0.7")
+    builder = DefaultReportBuilder(tool="pacta", version=tool_version or PACTA_VERSION)
 
     if isinstance(res, Mapping):
         violations = res.get("violations", ())
